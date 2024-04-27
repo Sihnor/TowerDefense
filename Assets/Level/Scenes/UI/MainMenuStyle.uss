@@ -1,0 +1,24 @@
+.mainbutton {
+    font-size: 200%;
+    width: 30%;
+    height: 10%;
+    align-self: center;
+    background-image: url("project://database/Assets/vecteezy_boutons-brillants-clipart-conception-illustration_9342302.png?fileID=2800000&guid=6203a5f38ce05a341902622564d9740b&type=3#vecteezy_boutons-brillants-clipart-conception-illustration_9342302");
+    background-color: rgba(255, 255, 255, 0);
+    border-left-color: rgb(149, 149, 149);
+    border-right-color: rgb(149, 149, 149);
+    border-top-color: rgb(149, 149, 149);
+    border-bottom-color: rgb(149, 149, 149);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    -unity-text-align: middle-center;
+    transition-duration: 0.5s;
+    transition-timing-function: ease-out-elastic;
+}
+
+.mainbutton:hover {
+    scale: 1.05 1.05;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
