@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Code.Scripts.Enums;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -24,50 +25,55 @@ namespace Code.Scripts
         [SerializeField] private GameObject ForestTile;
         [SerializeField] private GameObject WaterTile;
 
+        
+        
         List<List<GameObject>> QuadrantTiles = new List<List<GameObject>>();
-        List<List<Node>> QuadrantNodes = new List<List<Node>>();
+        List<List<Node>> NodesArray = new List<List<Node>>();
+        List<Vector2Int> WeightPoints = new List<Vector2Int>();
+        List<Vector2Int> TargetPoints = new List<Vector2Int>();
 
         #endregion
 
 
         // Can be changed to a scriptable object
-        private int QuadrantSize = 20;
-        private int CurrentCount = 0;
-        private int MinStraightRoad = 3;
-        private int MaxStraightRoad = 6;
-        private float ChanceToChange = 0.5f;
-        private bool ManyCurves = false;
+        [SerializeField] private int QuadrantSize = 15;
 
 
         // Werden durch den vorherigen Quadranten gesetzt
         private Vector2Int StartPoint;
         private EDirection StartDirection;
-
+        
+        private readonly Vector3 StartQuadrantPosition = Vector3.zero;
+        
         // Wird Random gesetzt
         private Vector2Int EndPoint;
         private EDirection TargetDirection;
-
-        private readonly Vector3 StartQuadrantPosition = Vector3.zero;
+        
 
         private void Start()
         {
             // Get A new Target Point
-            CreateRandomTargetPoint();
-
+            CreateEndPoint();
+            
             // Create a new Quadrant
             SpawnQuadrant(this.StartQuadrantPosition);
+            
+            SpawnTargetPoints();
+            return;
+            SpawnWeightPoints();
 
+            // Generate Block Map to block some tiles to get more interesting paths
+            BakeWeightMap();
+            
+            // Create A* Grid to navigate through the Quadrant
+            CreateAStarGrid();
+            
             
             //StartAPath();
         }
 
         private void StartAPath()
         {
-            // Create A* Grid to navigate through the Quadrant
-            CreateAStarGrid();
-
-            // Generate Block Map to block some tiles to get more interesting paths
-            GenerateBlockMap();
             List<Vector2Int> road;
             do
             {
@@ -78,7 +84,7 @@ namespace Code.Scripts
                     ResetQuadrant(this.StartQuadrantPosition);
                     SpawnQuadrant(this.StartQuadrantPosition);
                     ResetAStarGrid();
-                    GenerateBlockMap();
+                    BakeWeightMap();
                 }
             } while (road == null);
              
@@ -91,7 +97,7 @@ namespace Code.Scripts
             }
         }
 
-        private void CreateRandomTargetPoint()
+        private void CreateEndPoint()
         {
             this.StartDirection = (EDirection)Random.Range(0, 4);
             this.TargetDirection = (EDirection)Random.Range(0, 4);
@@ -126,7 +132,42 @@ namespace Code.Scripts
                 }
             }
         }
+        
+        private void SpawnTargetPoints()
+        {
+            int justified = 1 + (this.QuadrantSize / 5);
+            int numTargets = (justified >= this.QuadrantSize / 2) ? justified : Random.Range(justified, this.QuadrantSize / 2) ;
+            bool ignoreDistance = numTargets == justified;
 
+            // First Target
+            
+            this.TargetPoints.Add(new Vector2Int(Random.Range(1, this.QuadrantSize - 2), Random.Range(2, this.QuadrantSize - 2)));
+                
+            while (this.TargetPoints.Count < numTargets)
+            {
+                Vector2Int target = new Vector2Int(Random.Range(2, this.QuadrantSize - 2), Random.Range(2, this.QuadrantSize - 2));
+                bool add = true;
+                
+                foreach (Vector2Int point in this.TargetPoints)
+                {
+                    if (Vector2Int.Distance(target, point) < 3 && !ignoreDistance) add = false;
+                }
+
+                if (add) this.TargetPoints.Add(target);
+            }
+
+            foreach (Vector2Int point in this.TargetPoints)
+            {
+                Destroy(this.QuadrantTiles[point.y][point.x]);
+                this.QuadrantTiles[point.y][point.x] = Instantiate(this.TARGET, new Vector3(point.x, 0, point.y), Quaternion.Euler(0, 0, 0));
+            }
+        }
+
+        private void SpawnWeightPoints()
+        {
+            throw new NotImplementedException();
+        }
+        
         private void ResetQuadrant(Vector3 position)
         {
             for (int i = 0; i < this.QuadrantSize; i++)
@@ -157,11 +198,11 @@ namespace Code.Scripts
         {
             for (int i = 0; i < this.QuadrantSize; i++)
             {
-                this.QuadrantNodes.Add(new List<Node>());
+                this.NodesArray.Add(new List<Node>());
 
                 for (int j = 0; j < this.QuadrantSize; j++)
                 {
-                    this.QuadrantNodes[i].Add(new Node(ENodeState.Open, new Vector2Int(j, i)));
+                    this.NodesArray[i].Add(new Node(ENodeState.Open, new Vector2Int(j, i)));
                 }
             }
         }
@@ -172,15 +213,15 @@ namespace Code.Scripts
             {
                 for (int j = 0; j < this.QuadrantSize; j++)
                 {
-                    this.QuadrantNodes[i][j].SetTileType(ENodeState.Open);
-                    this.QuadrantNodes[i][j].SetGCost(1000000);
-                    this.QuadrantNodes[i][j].SetHCost(1000000);
-                    this.QuadrantNodes[i][j].SetParent(null);
+                    this.NodesArray[i][j].SetTileType(ENodeState.Open);
+                    this.NodesArray[i][j].SetGCost(1000000);
+                    this.NodesArray[i][j].SetHCost(1000000);
+                    this.NodesArray[i][j].SetParent(null);
                 }
             }
         }
 
-        private void GenerateBlockMap(int blockMinSize = 1, int blockMaxSize = 3)
+        private void BakeWeightMap(int blockMinSize = 1, int blockMaxSize = 3)
         {
             // Anzahl der Blöcke
             int numBlocks = Random.Range(1, Mathf.RoundToInt((this.QuadrantSize * this.QuadrantSize) / ((blockMaxSize * blockMaxSize))));
@@ -201,7 +242,7 @@ namespace Code.Scripts
                     {
                         Destroy(this.QuadrantTiles[row][col]);
                         this.QuadrantTiles[row][col] = Instantiate(this.BLOCK, new Vector3(col, 0, row), Quaternion.Euler(0, 0, 0));
-                        this.QuadrantNodes[row][col].SetTileType(ENodeState.Blocked);
+                        this.NodesArray[row][col].SetTileType(ENodeState.Blocked);
                     }
                 }
             }
@@ -209,14 +250,14 @@ namespace Code.Scripts
 
         private List<Vector2Int> FindPath(Vector2Int start, Vector2Int end)
         {
-            Node startNode = this.QuadrantNodes[start.y][start.x];
-            Node endNode = this.QuadrantNodes[end.y][end.x];
+            Node startNode = this.NodesArray[start.y][start.x];
+            Node endNode = this.NodesArray[end.y][end.x];
 
             List<Node> openSet = new List<Node>();
             HashSet<Node> closedSet = new HashSet<Node>();
 
             startNode.SetGCost(0);
-            startNode.SetHCost(GetManhattanDistance(startNode, endNode));
+            startNode.SetHCost(CalculateManhattanDistanceWithWeights(startNode, endNode));
             startNode.SetParent(null);
 
             openSet.Add(startNode);
@@ -243,13 +284,13 @@ namespace Code.Scripts
                 // Check all neighbours of the current node
                 foreach (Node neighbor in neighbours)
                 {
-                    int tentativeGCost = currentNode.GetGCost() + GetManhattanDistance(currentNode, neighbor);
+                    float tentativeGCost = currentNode.GetGCost() + CalculateManhattanDistanceWithWeights(currentNode, neighbor);
 
                     if (!openSet.Contains(neighbor) || tentativeGCost < neighbor.GetGCost())
                     {
                         neighbor.SetParent(currentNode);
                         neighbor.SetGCost(tentativeGCost);
-                        neighbor.SetHCost(GetManhattanDistance(neighbor, endNode));
+                        neighbor.SetHCost(CalculateManhattanDistanceWithWeights(neighbor, endNode));
 
                         if (!openSet.Contains(neighbor))
                         {
@@ -283,49 +324,70 @@ namespace Code.Scripts
         List<Node> GetOpenNeighbours(Node node)
         {
             List<Node> neighbours = new List<Node>();
+            
+            Func<Node, bool> IsNodeOpen = node => node.TileType == ENodeState.Open;
 
             // North
             if (node.Position.y - 1 >= 0)
             {
-                Node n = this.QuadrantNodes[node.Position.y - 1][node.Position.x];
+                Node n = this.NodesArray[node.Position.y - 1][node.Position.x];
                 if (IsNodeOpen(n)) neighbours.Add(n);
             }
 
             // South
             if (node.Position.y + 1 < this.QuadrantSize)
             {
-                Node n = this.QuadrantNodes[node.Position.y + 1][node.Position.x];
+                Node n = this.NodesArray[node.Position.y + 1][node.Position.x];
                 if (IsNodeOpen(n)) neighbours.Add(n);
             }
 
             // West
             if (node.Position.x - 1 >= 0)
             {
-                Node n = this.QuadrantNodes[node.Position.y][node.Position.x - 1];
+                Node n = this.NodesArray[node.Position.y][node.Position.x - 1];
                 if (IsNodeOpen(n)) neighbours.Add(n);
             }
 
             // East
             if (node.Position.x + 1 < this.QuadrantSize)
             {
-                Node n = this.QuadrantNodes[node.Position.y][node.Position.x + 1];
+                Node n = this.NodesArray[node.Position.y][node.Position.x + 1];
                 if (IsNodeOpen(n)) neighbours.Add(n);
             }
 
             return neighbours;
         }
 
-        private bool IsNodeOpen(Node node)
+        private float CalculateManhattanDistanceWithWeights(Node a, Node b)
         {
-            return node.TileType == ENodeState.Open;
-        }
+            List<int[]> indexes = new List<int[]>();
+            
+            int minX = Mathf.Min(a.Position.x, b.Position.x);
+            int maxX = Mathf.Max(a.Position.x, b.Position.x);
+            int minY = Mathf.Min(a.Position.y, b.Position.y);
+            int maxY = Mathf.Max(a.Position.y, b.Position.y);
 
-        private int GetManhattanDistance(Node a, Node b)
-        {
-            int x = Mathf.Abs(a.Position.x - b.Position.x);
-            int y = Mathf.Abs(a.Position.y - b.Position.y);
+            for (int i = minX; i <= maxX; i++)
+            {
+                for (int j = minY; j <= maxY; j++)
+                {
+                    indexes.Add(new int[]{i, j});
+                }
+            }
 
-            return x + y;
+            float cost = 0;
+            
+            foreach (int[] index in indexes)
+            {
+                cost += this.NodesArray[index[1]][index[0]].GetWeight();
+            }
+
+
+            return cost;
+            //int x = Mathf.Abs(a.Position.x - b.Position.x);
+            //int y = Mathf.Abs(a.Position.y - b.Position.y);
+            //
+            //return x + y;
 
         }
 

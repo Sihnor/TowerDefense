@@ -427,6 +427,7 @@ MonoBehaviour:
   MountainTile: {fileID: 0}
   ForestTile: {fileID: 0}
   WaterTile: {fileID: 0}
+  QuadrantSize: 25
 --- !u!4 &1775146770
 Transform:
   m_ObjectHideFlags: 0

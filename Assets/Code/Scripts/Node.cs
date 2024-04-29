@@ -16,10 +16,26 @@ namespace Code.Scripts
         public ENodeState TileType;
         public Vector2Int Position;
         
-        private int gCost = 1000000;
-        private int hCost = 1000000;
+        private float gCost = 1000000;
+        private float hCost = 1000000;
+        private float Weight = 1;
         private Node Parent;
-  
+        
+        public float GetWeight()
+        {
+            return this.Weight;
+        }
+        
+        public void SetWeight(float weight)
+        {
+            this.Weight = weight;
+        }
+        
+        public void IncreaseWeight(float weight)
+        {
+            this.Weight += weight;
+        }
+        
         public Node GetParent()
         {
             return this.Parent;
@@ -41,29 +57,29 @@ namespace Code.Scripts
             this.TileType = tileType;
         }
         
-        public int GetGCost()
+        public float GetGCost()
         {
             return this.gCost;
         }
         
-        public void SetGCost(int gCost)
+        public void SetGCost(float gCost)
         {
             this.gCost = gCost;
         }
         
-        public int GetHCost()
+        public float GetHCost()
         {
             return this.hCost;
         }
         
-        public void SetHCost(int hCost)
+        public void SetHCost(float hCost)
         {
             this.hCost = hCost;
         }
         
-        public int GetFCost()
+        public float GetFCost()
         {
-            return this.gCost + this.hCost;
+            return GetGCost() + this.hCost;
         }
     }
 }
