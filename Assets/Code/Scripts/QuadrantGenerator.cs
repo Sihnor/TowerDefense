@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Code.Scripts.Enums;
+using UnityEditor;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -37,7 +38,7 @@ namespace Code.Scripts
             List<Vector2Int> WeightPoints = new List<Vector2Int>();
             WeightPoints.Add(new Vector2Int(0, 0));
 
-            for (int i = 0; i < distance; i++)
+            for (int i = 1; i <= distance; i++)
             {
                 WeightPoints.Add(new Vector2Int(0, i));
                 WeightPoints.Add(new Vector2Int(0, i * -1));
@@ -51,7 +52,8 @@ namespace Code.Scripts
         private static List<Vector2Int> CreateSquareWeightMap(int size)
         {
             List<Vector2Int> WeightPoints = new List<Vector2Int>();
-            WeightPoints.Add(new Vector2Int(0, 0));
+            size = 3 + (size - 1) * 2;
+            
             int offset = size / 2;
 
             for (int i = 0; i < size; i++)
@@ -69,20 +71,22 @@ namespace Code.Scripts
         {
             List<Vector2Int> WeightPoints = new List<Vector2Int>();
             WeightPoints.Add(new Vector2Int(0, 0));
-
-            int offset = size / 2;
+            size = 3 + (size - 1) * 2; //   1 = 3,        3 = 7,      5 = 11,       7 = 15
+            
+            int offset = size / 2; //       3 = 1,        5 = 2,      7 = 3,        9 = 4
 
             for (int i = 0; i < size; i++)
             {
                 for (int j = 0; j < size; j++)
                 {
-                    if (i % 2 == 1)
+                    if (i % 2 == 0)
                     {
                         if (j % 2 == 0) WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
                         continue;
                     }
 
-                    if (size / 2 == j) WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
+                    if ((size / 2) == j) WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
+                    if (i == offset && j %2 ==1) WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
                 }
             }
             
@@ -302,7 +306,10 @@ namespace Code.Scripts
             // On Space bar click
             if (Input.GetKeyDown(KeyCode.Space))
             {
-
+                foreach (Vector2Int points in WeightStruct.GetRandomFigure(3))
+                {
+                    Debug.Log(points);
+                }
             }
         }
 
