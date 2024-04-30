@@ -6,6 +6,88 @@ using Random = UnityEngine.Random;
 
 namespace Code.Scripts
 {
+    internal enum EWeightType
+    {
+        Cross,
+        Square,
+        Field
+    }
+
+    internal readonly struct WeightStruct
+    {
+        public readonly List<Vector2Int> WeightPoints;
+
+        public WeightStruct(EWeightType type, int size)
+        {
+            this.WeightPoints = new List<Vector2Int>();
+
+            switch (type)
+            {
+                case EWeightType.Cross:
+                    CreateCrossWeightMap(size);
+                    break;
+                case EWeightType.Square:
+                    CreateSquareWeightMap(size);
+                    break;
+                case EWeightType.Field:
+                    CreateFieldWeightMap(size);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type), type, null);
+            }
+        }
+
+        private void CreateCrossWeightMap(int distance)
+        {
+            this.WeightPoints.Add(new Vector2Int(0, 0));
+
+            for (int i = 0; i < distance; i++)
+            {
+                this.WeightPoints.Add(new Vector2Int(0, i));
+                this.WeightPoints.Add(new Vector2Int(0, i * -1));
+                this.WeightPoints.Add(new Vector2Int(i, 0));
+                this.WeightPoints.Add(new Vector2Int(i * -1, 0));
+            }
+        }
+
+        private void CreateSquareWeightMap(int size)
+        {
+            this.WeightPoints.Add(new Vector2Int(0, 0));
+            int offset = size / 2;
+
+            for (int i = 0; i < size; i++)
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    this.WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
+                }
+            }
+        }
+
+        private void CreateFieldWeightMap(int size)
+        {
+            this.WeightPoints.Add(new Vector2Int(0, 0));
+
+            int offset = size / 2;
+
+            for (int i = 0; i < size; i++)
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    if (i % 2 == 1)
+                    {
+                        if (j % 2 == 0) this.WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
+                        continue;
+                    }
+
+                    if (size / 2 == j) this.WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
+                }
+            }
+        }
+    }
+
+
+
     public class QuadrantGenerator : MonoBehaviour
     {
 
@@ -25,8 +107,8 @@ namespace Code.Scripts
         [SerializeField] private GameObject ForestTile;
         [SerializeField] private GameObject WaterTile;
 
-        
-        
+
+
         List<List<GameObject>> QuadrantTiles = new List<List<GameObject>>();
         List<List<Node>> NodesArray = new List<List<Node>>();
         List<Vector2Int> WeightPoints = new List<Vector2Int>();
@@ -42,43 +124,44 @@ namespace Code.Scripts
         // Werden durch den vorherigen Quadranten gesetzt
         private Vector2Int StartPoint;
         private EDirection StartDirection;
-        
+
         private readonly Vector3 StartQuadrantPosition = Vector3.zero;
-        
+
         // Wird Random gesetzt
         private Vector2Int EndPoint;
         private EDirection TargetDirection;
-        
+
 
         private void Start()
         {
             // Get A new Target Point
             CreateEndPoint();
-            
+
             // Create a new Quadrant
             SpawnQuadrant(this.StartQuadrantPosition);
-            
-            SpawnTargetPoints();
-            return;
-            SpawnWeightPoints();
 
+            SpawnTargetPoints();
+            
+            SpawnWeightPoints();
+            return;
             // Generate Block Map to block some tiles to get more interesting paths
             BakeWeightMap();
-            
+
             // Create A* Grid to navigate through the Quadrant
             CreateAStarGrid();
-            
-            
+
+
             //StartAPath();
         }
 
         private void StartAPath()
         {
             List<Vector2Int> road;
+
             do
             {
                 road = FindPath(this.StartPoint, this.EndPoint);
-                
+
                 if (road == null)
                 {
                     ResetQuadrant(this.StartQuadrantPosition);
@@ -87,7 +170,7 @@ namespace Code.Scripts
                     BakeWeightMap();
                 }
             } while (road == null);
-             
+
 
             foreach (Vector2Int node in road)
             {
@@ -132,22 +215,22 @@ namespace Code.Scripts
                 }
             }
         }
-        
+
         private void SpawnTargetPoints()
         {
             int justified = 1 + (this.QuadrantSize / 5);
-            int numTargets = (justified >= this.QuadrantSize / 2) ? justified : Random.Range(justified, this.QuadrantSize / 2) ;
+            int numTargets = (justified >= this.QuadrantSize / 2) ? justified : Random.Range(justified, this.QuadrantSize / 2);
             bool ignoreDistance = numTargets == justified;
 
             // First Target
-            
+
             this.TargetPoints.Add(new Vector2Int(Random.Range(1, this.QuadrantSize - 2), Random.Range(2, this.QuadrantSize - 2)));
-                
+
             while (this.TargetPoints.Count < numTargets)
             {
                 Vector2Int target = new Vector2Int(Random.Range(2, this.QuadrantSize - 2), Random.Range(2, this.QuadrantSize - 2));
                 bool add = true;
-                
+
                 foreach (Vector2Int point in this.TargetPoints)
                 {
                     if (Vector2Int.Distance(target, point) < 3 && !ignoreDistance) add = false;
@@ -165,9 +248,36 @@ namespace Code.Scripts
 
         private void SpawnWeightPoints()
         {
-            throw new NotImplementedException();
+            // Corners of the Quadrant
+            this.WeightPoints.Add(new Vector2Int(1, 1));
+            this.WeightPoints.Add(new Vector2Int(1, this.QuadrantSize - 2));
+            this.WeightPoints.Add(new Vector2Int(this.QuadrantSize - 2, 1));
+            this.WeightPoints.Add(new Vector2Int(this.QuadrantSize - 2, this.QuadrantSize - 2));
+
+            // Middle inside corners
+            this.WeightPoints.Add(new Vector2Int((int)this.QuadrantSize / 2, 1));
+            this.WeightPoints.Add(new Vector2Int((int)this.QuadrantSize / 2, this.QuadrantSize - 2));
+            this.WeightPoints.Add(new Vector2Int(1, (int)this.QuadrantSize / 2));
+            this.WeightPoints.Add(new Vector2Int(this.QuadrantSize - 2, (int)this.QuadrantSize / 2));
+
+            const int startInnerSquare = 3;
+            int endInnerSquare = this.QuadrantSize - 3;
+
+            if (endInnerSquare - startInnerSquare <= 3) return;
+
+            // Random Points
+            for (int i = 0; i < this.QuadrantSize - 6; i++)
+            {
+                this.WeightPoints.Add(new Vector2Int(Random.Range(startInnerSquare, endInnerSquare), Random.Range(startInnerSquare, endInnerSquare)));
+            }
+            
+            foreach (Vector2Int point in this.WeightPoints)
+            {
+                Destroy(this.QuadrantTiles[point.y][point.x]);
+                this.QuadrantTiles[point.y][point.x] = Instantiate(this.BLOCK, new Vector3(point.x, 0, point.y), Quaternion.Euler(0, 0, 0));
+            }
         }
-        
+
         private void ResetQuadrant(Vector3 position)
         {
             for (int i = 0; i < this.QuadrantSize; i++)
@@ -324,7 +434,7 @@ namespace Code.Scripts
         List<Node> GetOpenNeighbours(Node node)
         {
             List<Node> neighbours = new List<Node>();
-            
+
             Func<Node, bool> IsNodeOpen = node => node.TileType == ENodeState.Open;
 
             // North
@@ -361,7 +471,7 @@ namespace Code.Scripts
         private float CalculateManhattanDistanceWithWeights(Node a, Node b)
         {
             List<int[]> indexes = new List<int[]>();
-            
+
             int minX = Mathf.Min(a.Position.x, b.Position.x);
             int maxX = Mathf.Max(a.Position.x, b.Position.x);
             int minY = Mathf.Min(a.Position.y, b.Position.y);
@@ -371,12 +481,12 @@ namespace Code.Scripts
             {
                 for (int j = minY; j <= maxY; j++)
                 {
-                    indexes.Add(new int[]{i, j});
+                    indexes.Add(new int[] { i, j });
                 }
             }
 
             float cost = 0;
-            
+
             foreach (int[] index in indexes)
             {
                 cost += this.NodesArray[index[1]][index[0]].GetWeight();
@@ -398,6 +508,6 @@ namespace Code.Scripts
 
         #endregion
 
-        
+
     }
 }
