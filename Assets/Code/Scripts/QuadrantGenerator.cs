@@ -15,58 +15,60 @@ namespace Code.Scripts
 
     internal readonly struct WeightStruct
     {
-        public readonly List<Vector2Int> WeightPoints;
-
-        public WeightStruct(EWeightType type, int size)
+        public static List<Vector2Int> GetRandomFigure(int size)
         {
-            this.WeightPoints = new List<Vector2Int>();
+            System.Random random = new System.Random();
+            
+            int randomFigure = random.Next(0, 3);
+            EWeightType type = (EWeightType) randomFigure;
 
-            switch (type)
+            return type switch
             {
-                case EWeightType.Cross:
-                    CreateCrossWeightMap(size);
-                    break;
-                case EWeightType.Square:
-                    CreateSquareWeightMap(size);
-                    break;
-                case EWeightType.Field:
-                    CreateFieldWeightMap(size);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(type), type, null);
-            }
+                EWeightType.Cross => CreateCrossWeightMap(size),
+                EWeightType.Square => CreateSquareWeightMap(size),
+                EWeightType.Field => CreateFieldWeightMap(size),
+                _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+            };
+
         }
 
-        private void CreateCrossWeightMap(int distance)
+        private static List<Vector2Int> CreateCrossWeightMap(int distance)
         {
-            this.WeightPoints.Add(new Vector2Int(0, 0));
+            List<Vector2Int> WeightPoints = new List<Vector2Int>();
+            WeightPoints.Add(new Vector2Int(0, 0));
 
             for (int i = 0; i < distance; i++)
             {
-                this.WeightPoints.Add(new Vector2Int(0, i));
-                this.WeightPoints.Add(new Vector2Int(0, i * -1));
-                this.WeightPoints.Add(new Vector2Int(i, 0));
-                this.WeightPoints.Add(new Vector2Int(i * -1, 0));
+                WeightPoints.Add(new Vector2Int(0, i));
+                WeightPoints.Add(new Vector2Int(0, i * -1));
+                WeightPoints.Add(new Vector2Int(i, 0));
+                WeightPoints.Add(new Vector2Int(i * -1, 0));
             }
+            
+            return WeightPoints;
         }
 
-        private void CreateSquareWeightMap(int size)
+        private static List<Vector2Int> CreateSquareWeightMap(int size)
         {
-            this.WeightPoints.Add(new Vector2Int(0, 0));
+            List<Vector2Int> WeightPoints = new List<Vector2Int>();
+            WeightPoints.Add(new Vector2Int(0, 0));
             int offset = size / 2;
 
             for (int i = 0; i < size; i++)
             {
                 for (int j = 0; j < size; j++)
                 {
-                    this.WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
+                    WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
                 }
             }
+
+            return WeightPoints;
         }
 
-        private void CreateFieldWeightMap(int size)
+        private static List<Vector2Int> CreateFieldWeightMap(int size)
         {
-            this.WeightPoints.Add(new Vector2Int(0, 0));
+            List<Vector2Int> WeightPoints = new List<Vector2Int>();
+            WeightPoints.Add(new Vector2Int(0, 0));
 
             int offset = size / 2;
 
@@ -76,13 +78,15 @@ namespace Code.Scripts
                 {
                     if (i % 2 == 1)
                     {
-                        if (j % 2 == 0) this.WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
+                        if (j % 2 == 0) WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
                         continue;
                     }
 
-                    if (size / 2 == j) this.WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
+                    if (size / 2 == j) WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
                 }
             }
+            
+            return WeightPoints;
         }
     }
 
@@ -150,7 +154,7 @@ namespace Code.Scripts
             // Create A* Grid to navigate through the Quadrant
             CreateAStarGrid();
 
-
+            
             //StartAPath();
         }
 
