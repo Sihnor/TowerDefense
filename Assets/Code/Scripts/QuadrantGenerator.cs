@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Code.Scripts.Enums;
 using UnityEditor;
 using UnityEngine;
@@ -19,9 +21,9 @@ namespace Code.Scripts
         public static List<Vector2Int> GetRandomFigure(int size)
         {
             System.Random random = new System.Random();
-            
+
             int randomFigure = random.Next(0, 3);
-            EWeightType type = (EWeightType) randomFigure;
+            EWeightType type = (EWeightType)randomFigure;
 
             return type switch
             {
@@ -45,7 +47,7 @@ namespace Code.Scripts
                 WeightPoints.Add(new Vector2Int(i, 0));
                 WeightPoints.Add(new Vector2Int(i * -1, 0));
             }
-            
+
             return WeightPoints;
         }
 
@@ -53,7 +55,7 @@ namespace Code.Scripts
         {
             List<Vector2Int> WeightPoints = new List<Vector2Int>();
             size = 3 + (size - 1) * 2;
-            
+
             int offset = size / 2;
 
             for (int i = 0; i < size; i++)
@@ -72,7 +74,7 @@ namespace Code.Scripts
             List<Vector2Int> WeightPoints = new List<Vector2Int>();
             WeightPoints.Add(new Vector2Int(0, 0));
             size = 3 + (size - 1) * 2; //   1 = 3,        3 = 7,      5 = 11,       7 = 15
-            
+
             int offset = size / 2; //       3 = 1,        5 = 2,      7 = 3,        9 = 4
 
             for (int i = 0; i < size; i++)
@@ -86,10 +88,10 @@ namespace Code.Scripts
                     }
 
                     if ((size / 2) == j) WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
-                    if (i == offset && j %2 ==1) WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
+                    if (i == offset && j % 2 == 1) WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
                 }
             }
-            
+
             return WeightPoints;
         }
     }
@@ -100,25 +102,9 @@ namespace Code.Scripts
     {
 
         #region Variables
-
-        [Header("RoadTiles")] [SerializeField] private GameObject RoadTileStraight;
-        [SerializeField] private GameObject RoadTileCorner;
-        [SerializeField] private GameObject RoadTileT;
-        [SerializeField] private GameObject RoadTileCross;
-        [SerializeField] private GameObject BLOCK;
-        [SerializeField] private GameObject TARGET;
-        [SerializeField] private GameObject ROAD;
-
-
         [SerializeField] private GameObject FieldTile;
-        [SerializeField] private GameObject MountainTile;
-        [SerializeField] private GameObject ForestTile;
-        [SerializeField] private GameObject WaterTile;
-
-
 
         List<List<GameObject>> QuadrantTiles = new List<List<GameObject>>();
-        List<List<Node>> NodesArray = new List<List<Node>>();
         List<Vector2Int> WeightPoints = new List<Vector2Int>();
         List<Vector2Int> TargetPoints = new List<Vector2Int>();
 
@@ -149,44 +135,20 @@ namespace Code.Scripts
             SpawnQuadrant(this.StartQuadrantPosition);
 
             SpawnTargetPoints();
-            
-            SpawnWeightPoints();
-            return;
-            // Generate Block Map to block some tiles to get more interesting paths
-            BakeWeightMap();
 
+            SpawnWeightPoints();
+            
             // Create A* Grid to navigate through the Quadrant
             CreateAStarGrid();
 
-            
-            //StartAPath();
+            // Generate Block Map to block some tiles to get more interesting paths
+            BakeWeightMap();
+
+            //List<Vector2Int> road = FindPath(this.StartPoint, this.EndPoint);
+            StartCoroutine(FindPath(this.StartPoint, this.EndPoint));
         }
 
-        private void StartAPath()
-        {
-            List<Vector2Int> road;
-
-            do
-            {
-                road = FindPath(this.StartPoint, this.EndPoint);
-
-                if (road == null)
-                {
-                    ResetQuadrant(this.StartQuadrantPosition);
-                    SpawnQuadrant(this.StartQuadrantPosition);
-                    ResetAStarGrid();
-                    BakeWeightMap();
-                }
-            } while (road == null);
-
-
-            foreach (Vector2Int node in road)
-            {
-                Debug.Log("Node: " + node);
-                Destroy(this.QuadrantTiles[node.y][node.x]);
-                this.QuadrantTiles[node.y][node.x] = Instantiate(this.ROAD, new Vector3(node.x, 0, node.y), Quaternion.Euler(0, 0, 0));
-            }
-        }
+        
 
         private void CreateEndPoint()
         {
@@ -220,6 +182,8 @@ namespace Code.Scripts
                     Vector3 spawnPosition = position + new Vector3(j, 0, i);
 
                     this.QuadrantTiles[i].Add(Instantiate(this.FieldTile, spawnPosition, Quaternion.Euler(0, 0, 0)));
+                    this.QuadrantTiles[i][j].GetComponent<Node>().SetWeight(1);
+                    this.QuadrantTiles[i][j].GetComponent<MeshRenderer>().material.color = Color.white;
                 }
             }
         }
@@ -247,15 +211,17 @@ namespace Code.Scripts
                 if (add) this.TargetPoints.Add(target);
             }
 
+            return;
             foreach (Vector2Int point in this.TargetPoints)
             {
-                Destroy(this.QuadrantTiles[point.y][point.x]);
-                this.QuadrantTiles[point.y][point.x] = Instantiate(this.TARGET, new Vector3(point.x, 0, point.y), Quaternion.Euler(0, 0, 0));
+                this.QuadrantTiles[point.y][point.x].GetComponent<MeshRenderer>().material.color = Color.cyan;
             }
         }
 
         private void SpawnWeightPoints()
         {
+            this.WeightPoints.Clear();
+            
             // Corners of the Quadrant
             this.WeightPoints.Add(new Vector2Int(1, 1));
             this.WeightPoints.Add(new Vector2Int(1, this.QuadrantSize - 2));
@@ -278,11 +244,11 @@ namespace Code.Scripts
             {
                 this.WeightPoints.Add(new Vector2Int(Random.Range(startInnerSquare, endInnerSquare), Random.Range(startInnerSquare, endInnerSquare)));
             }
-            
+
+            return;
             foreach (Vector2Int point in this.WeightPoints)
             {
-                Destroy(this.QuadrantTiles[point.y][point.x]);
-                this.QuadrantTiles[point.y][point.x] = Instantiate(this.BLOCK, new Vector3(point.x, 0, point.y), Quaternion.Euler(0, 0, 0));
+                this.QuadrantTiles[point.y][point.x].GetComponent<MeshRenderer>().material.color = Color.magenta;
             }
         }
 
@@ -306,139 +272,118 @@ namespace Code.Scripts
             // On Space bar click
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                foreach (Vector2Int points in WeightStruct.GetRandomFigure(3))
-                {
-                    Debug.Log(points);
-                }
+                StopAllCoroutines();
+                ResetQuadrant(Vector3.zero);
+                Start();
             }
         }
 
         #region A* Pathfinding Anstz
 
+        private void BakeWeightMap()
+        {
+            foreach (Vector2Int point in this.WeightPoints)
+            {
+                List<Vector2Int> weightPoints = WeightStruct.GetRandomFigure(Random.Range(3, this.QuadrantSize / 2));
+            
+                foreach (Vector2Int weightPoint in weightPoints)
+                {
+                    int x = point.x + weightPoint.x;
+                    int y = point.y + weightPoint.y;
+            
+                    if (x < 0 || x >= this.QuadrantSize || y < 0 || y >= this.QuadrantSize) continue;
+            
+                    this.QuadrantTiles[y][x].GetComponent<Node>().IncreaseWeight(Random.value * 3);
+                }
+            }
+        }
+
         private void CreateAStarGrid()
         {
             for (int i = 0; i < this.QuadrantSize; i++)
             {
-                this.NodesArray.Add(new List<Node>());
-
                 for (int j = 0; j < this.QuadrantSize; j++)
                 {
-                    this.NodesArray[i].Add(new Node(ENodeState.Open, new Vector2Int(j, i)));
+                    this.QuadrantTiles[i][j].GetComponent<Node>().SetNode( ENodeState.Open, new Vector2Int(j, i));
                 }
             }
         }
 
-        private void ResetAStarGrid()
+        
+        
+        
+        List<Vector2Int> RoadPath = new List<Vector2Int>();
+        
+
+        private IEnumerator FindPath(Vector2Int start, Vector2Int end)
         {
-            for (int i = 0; i < this.QuadrantSize; i++)
-            {
-                for (int j = 0; j < this.QuadrantSize; j++)
-                {
-                    this.NodesArray[i][j].SetTileType(ENodeState.Open);
-                    this.NodesArray[i][j].SetGCost(1000000);
-                    this.NodesArray[i][j].SetHCost(1000000);
-                    this.NodesArray[i][j].SetParent(null);
-                }
-            }
-        }
-
-        private void BakeWeightMap(int blockMinSize = 1, int blockMaxSize = 3)
-        {
-            // Anzahl der Blöcke
-            int numBlocks = Random.Range(1, Mathf.RoundToInt((this.QuadrantSize * this.QuadrantSize) / ((blockMaxSize * blockMaxSize))));
-
-            // Erstelle Blöcke
-            for (int i = 0; i < numBlocks; i++)
-            {
-                int rowStart = Random.Range(0, this.QuadrantSize - blockMaxSize + 1);
-                int colStart = Random.Range(0, this.QuadrantSize - blockMaxSize + 1);
-
-                int blockWidth = Random.Range(blockMinSize, blockMaxSize + 1);
-                int blockHeight = Random.Range(blockMinSize, blockMaxSize + 1);
-
-                // Setze Zellen im Block zu Block
-                for (int row = rowStart; row < rowStart + blockHeight; row++)
-                {
-                    for (int col = colStart; col < colStart + blockWidth; col++)
-                    {
-                        Destroy(this.QuadrantTiles[row][col]);
-                        this.QuadrantTiles[row][col] = Instantiate(this.BLOCK, new Vector3(col, 0, row), Quaternion.Euler(0, 0, 0));
-                        this.NodesArray[row][col].SetTileType(ENodeState.Blocked);
-                    }
-                }
-            }
-        }
-
-        private List<Vector2Int> FindPath(Vector2Int start, Vector2Int end)
-        {
-            Node startNode = this.NodesArray[start.y][start.x];
-            Node endNode = this.NodesArray[end.y][end.x];
-
             List<Node> openSet = new List<Node>();
             HashSet<Node> closedSet = new HashSet<Node>();
+            
+            Node startNode = this.QuadrantTiles[start.y][start.x].GetComponent<Node>();
+            Node endNode = this.QuadrantTiles[end.y][end.x].GetComponent<Node>();
 
-            startNode.SetGCost(0);
-            startNode.SetHCost(CalculateManhattanDistanceWithWeights(startNode, endNode));
+            startNode.SetWeight(0);
             startNode.SetParent(null);
 
             openSet.Add(startNode);
 
             while (openSet.Count > 0)
             {
+                startNode.gameObject.GetComponent<MeshRenderer>().material.color = Color.gray;
+                endNode.gameObject.GetComponent<MeshRenderer>().material.color = Color.black;
+                
                 Node currentNode = openSet[0];
 
-                foreach (Node node in openSet)
+                foreach (Node node in openSet.Where(node => node.GetFCost() < currentNode.GetFCost()))
                 {
-                    if (node.GetFCost() < currentNode.GetFCost()) currentNode = node;
+                    currentNode = node;
                 }
+                currentNode.gameObject.GetComponent<MeshRenderer>().material.color = Color.yellow;
 
                 openSet.Remove(currentNode);
 
                 if (IsEndNode(currentNode))
                 {
+                    StopAllCoroutines();
                     Debug.Log("Path found");
-                    return ReconstructPath(currentNode);
+                    this.RoadPath = ReconstructPath(currentNode);
+                    break;
                 }
 
                 List<Node> neighbours = GetOpenNeighbours(currentNode);
 
-                // Check all neighbours of the current node
-                foreach (Node neighbor in neighbours)
+                foreach (Node neighbour in neighbours)
                 {
-                    float tentativeGCost = currentNode.GetGCost() + CalculateManhattanDistanceWithWeights(currentNode, neighbor);
+                    neighbour.gameObject.GetComponent<MeshRenderer>().material.color = Color.cyan;
+                }
+                
+                foreach (Node neighbour in neighbours)
+                {
+                    //float tentativeGCost = currentNode.GetGCost() + CalculateManhattanDistanceWithWeights(currentNode, neighbor);
+                    float tentativeGCost = currentNode.GetGCost() + neighbour.GetCostToEnter();
 
-                    if (!openSet.Contains(neighbor) || tentativeGCost < neighbor.GetGCost())
-                    {
-                        neighbor.SetParent(currentNode);
-                        neighbor.SetGCost(tentativeGCost);
-                        neighbor.SetHCost(CalculateManhattanDistanceWithWeights(neighbor, endNode));
+                    if (openSet.Contains(neighbour) && !(tentativeGCost < neighbour.GetGCost())) continue;
+                    
+                    neighbour.SetParent(currentNode);
+                    neighbour.SetGCost(tentativeGCost);
+                    neighbour.SetHCost(CalculateManhattanDistanceWithWeights(neighbour, endNode));
+                        
+                    if (!openSet.Contains(neighbour)) openSet.Add(neighbour);
+                }
+                
+                yield return new WaitForSeconds(0.01f);
 
-                        if (!openSet.Contains(neighbor))
-                        {
-                            openSet.Add(neighbor);
-                        }
-                    }
+                foreach (Node neighbour in neighbours)
+                {
+                    neighbour.gameObject.GetComponent<MeshRenderer>().material.color = Color.green;
                 }
 
+                currentNode.gameObject.GetComponent<MeshRenderer>().material.color = Color.red;
+                
                 currentNode.SetTileType(ENodeState.Closed);
                 closedSet.Add(currentNode);
             }
-
-            return null;
-        }
-
-        private List<Vector2Int> ReconstructPath(Node currentNode)
-        {
-            List<Vector2Int> path = new List<Vector2Int>();
-
-            while (currentNode != null)
-            {
-                path.Add(currentNode.Position);
-                currentNode = currentNode.GetParent();
-            }
-
-            path.Reverse();
-            return path;
 
         }
 
@@ -451,28 +396,28 @@ namespace Code.Scripts
             // North
             if (node.Position.y - 1 >= 0)
             {
-                Node n = this.NodesArray[node.Position.y - 1][node.Position.x];
+                Node n = this.QuadrantTiles[node.Position.y - 1][node.Position.x].GetComponent<Node>();
                 if (IsNodeOpen(n)) neighbours.Add(n);
             }
 
             // South
             if (node.Position.y + 1 < this.QuadrantSize)
             {
-                Node n = this.NodesArray[node.Position.y + 1][node.Position.x];
+                Node n = this.QuadrantTiles[node.Position.y + 1][node.Position.x].GetComponent<Node>();
                 if (IsNodeOpen(n)) neighbours.Add(n);
             }
 
             // West
             if (node.Position.x - 1 >= 0)
             {
-                Node n = this.NodesArray[node.Position.y][node.Position.x - 1];
+                Node n = this.QuadrantTiles[node.Position.y][node.Position.x - 1].GetComponent<Node>();
                 if (IsNodeOpen(n)) neighbours.Add(n);
             }
 
             // East
             if (node.Position.x + 1 < this.QuadrantSize)
             {
-                Node n = this.NodesArray[node.Position.y][node.Position.x + 1];
+                Node n = this.QuadrantTiles[node.Position.y][node.Position.x + 1].GetComponent<Node>();
                 if (IsNodeOpen(n)) neighbours.Add(n);
             }
 
@@ -496,25 +441,32 @@ namespace Code.Scripts
                 }
             }
 
-            float cost = 0;
-
-            foreach (int[] index in indexes)
-            {
-                cost += this.NodesArray[index[1]][index[0]].GetWeight();
-            }
-
-
-            return cost;
-            //int x = Mathf.Abs(a.Position.x - b.Position.x);
-            //int y = Mathf.Abs(a.Position.y - b.Position.y);
-            //
-            //return x + y;
-
+            return indexes.Sum(index => this.QuadrantTiles[index[1]][index[0]].GetComponent<Node>().GetWeight());
         }
 
         private bool IsEndNode(Node node)
         {
             return node.Position == this.EndPoint;
+        }
+
+        private List<Vector2Int> ReconstructPath(Node currentNode)
+        {
+            List<Vector2Int> path = new List<Vector2Int>();
+
+            while (currentNode != null)
+            {
+                path.Add(currentNode.Position);
+                currentNode = currentNode.GetParent();
+            }
+
+            path.Reverse();
+
+            foreach (var VARIABLE in path)
+            {
+                this.QuadrantTiles[VARIABLE.y][VARIABLE.x].GetComponent<MeshRenderer>().material.color = Color.black;
+            }
+            return path;
+
         }
 
         #endregion
