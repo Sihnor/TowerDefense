@@ -102,6 +102,7 @@ namespace Code.Scripts
     {
 
         #region Variables
+
         [SerializeField] private GameObject FieldTile;
 
         List<List<GameObject>> QuadrantTiles = new List<List<GameObject>>();
@@ -124,8 +125,7 @@ namespace Code.Scripts
         // Wird Random gesetzt
         private Vector2Int EndPoint;
         private EDirection TargetDirection;
-
-
+        
         private void Start()
         {
             // Get A new Target Point
@@ -137,7 +137,7 @@ namespace Code.Scripts
             SpawnTargetPoints();
 
             SpawnWeightPoints();
-            
+
             // Create A* Grid to navigate through the Quadrant
             CreateAStarGrid();
 
@@ -145,10 +145,11 @@ namespace Code.Scripts
             BakeWeightMap();
 
             //List<Vector2Int> road = FindPath(this.StartPoint, this.EndPoint);
-            StartCoroutine(FindPath(this.StartPoint, this.EndPoint));
+            //StartCoroutine(FindPath(this.StartPoint, this.EndPoint));
+            StartCoroutine(CreatePath());
         }
 
-        
+
 
         private void CreateEndPoint()
         {
@@ -190,38 +191,40 @@ namespace Code.Scripts
 
         private void SpawnTargetPoints()
         {
+            this.TargetPoints?.Clear();
+
             int justified = 1 + (this.QuadrantSize / 5);
             int numTargets = (justified >= this.QuadrantSize / 2) ? justified : Random.Range(justified, this.QuadrantSize / 2);
+            numTargets = 3;
             bool ignoreDistance = numTargets == justified;
 
             // First Target
 
-            this.TargetPoints.Add(new Vector2Int(Random.Range(1, this.QuadrantSize - 2), Random.Range(2, this.QuadrantSize - 2)));
+            this.TargetPoints!.Add(new Vector2Int(Random.Range(1, this.QuadrantSize - 2), Random.Range(2, this.QuadrantSize - 2)));
 
             while (this.TargetPoints.Count < numTargets)
             {
                 Vector2Int target = new Vector2Int(Random.Range(2, this.QuadrantSize - 2), Random.Range(2, this.QuadrantSize - 2));
                 bool add = true;
 
-                foreach (Vector2Int point in this.TargetPoints)
+                foreach (Vector2Int point in this.TargetPoints.Where(point => Vector2Int.Distance(target, point) < 3 && !ignoreDistance))
                 {
-                    if (Vector2Int.Distance(target, point) < 3 && !ignoreDistance) add = false;
+                    add = false;
                 }
 
                 if (add) this.TargetPoints.Add(target);
             }
 
-            return;
             foreach (Vector2Int point in this.TargetPoints)
             {
-                this.QuadrantTiles[point.y][point.x].GetComponent<MeshRenderer>().material.color = Color.cyan;
+                DrawCyanNode(this.QuadrantTiles[point.y][point.x].GetComponent<Node>());
             }
         }
 
         private void SpawnWeightPoints()
         {
             this.WeightPoints.Clear();
-            
+
             // Corners of the Quadrant
             this.WeightPoints.Add(new Vector2Int(1, 1));
             this.WeightPoints.Add(new Vector2Int(1, this.QuadrantSize - 2));
@@ -246,6 +249,7 @@ namespace Code.Scripts
             }
 
             return;
+
             foreach (Vector2Int point in this.WeightPoints)
             {
                 this.QuadrantTiles[point.y][point.x].GetComponent<MeshRenderer>().material.color = Color.magenta;
@@ -285,14 +289,14 @@ namespace Code.Scripts
             foreach (Vector2Int point in this.WeightPoints)
             {
                 List<Vector2Int> weightPoints = WeightStruct.GetRandomFigure(Random.Range(3, this.QuadrantSize / 2));
-            
+
                 foreach (Vector2Int weightPoint in weightPoints)
                 {
                     int x = point.x + weightPoint.x;
                     int y = point.y + weightPoint.y;
-            
+
                     if (x < 0 || x >= this.QuadrantSize || y < 0 || y >= this.QuadrantSize) continue;
-            
+
                     this.QuadrantTiles[y][x].GetComponent<Node>().IncreaseWeight(Random.value * 3);
                 }
             }
@@ -304,22 +308,102 @@ namespace Code.Scripts
             {
                 for (int j = 0; j < this.QuadrantSize; j++)
                 {
-                    this.QuadrantTiles[i][j].GetComponent<Node>().SetNode( ENodeState.Open, new Vector2Int(j, i));
+                    this.QuadrantTiles[i][j].GetComponent<Node>().SetNode(ENodeState.Open, new Vector2Int(j, i));
                 }
             }
         }
 
-        
-        
-        
         List<Vector2Int> RoadPath = new List<Vector2Int>();
-        
+
+
+        private void OnDrawGizmos()
+        {
+            if (this.RoadPath.Count == 0) return;
+
+            for (int i = 0; i < this.RoadPath.Count - 1; i++)
+            {
+                Vector3 start = new Vector3(this.RoadPath[i].x, 0.5f, this.RoadPath[i].y);
+                Vector3 end = new Vector3(this.RoadPath[i + 1].x, 0.5f, this.RoadPath[i + 1].y);
+
+                Gizmos.color = Color.red;
+                Gizmos.DrawLine(start, end);
+            }
+        }
+
+        private IEnumerator CreatePath()
+        {
+            while (true)
+            {
+                bool notFinished = true;
+                
+                SpawnTargetPoints();
+                this.RoadPath.Clear();
+                
+                
+                
+                for (int i = 0; i <= this.TargetPoints.Count; i++)
+                {
+                    // Reset the Quadrant
+                    for (int j = 0; j < this.QuadrantSize; j++)
+                    {
+                        for (int k = 0; k < this.QuadrantSize; k++)
+                        {
+                            // Get the node
+                            Node node = this.QuadrantTiles[j][k].GetComponent<Node>();
+                            ResetColorNode(node);
+                            node.SetTileType(ENodeState.Open);
+                        }
+                    }
+                    
+                    // Block the Road Path
+                    foreach (Vector2Int point in this.RoadPath)
+                    {
+                        this.QuadrantTiles[point.y][point.x].GetComponent<Node>().SetTileType(ENodeState.Blocked);
+                        DrawBlackNode(this.QuadrantTiles[point.y][point.x].GetComponent<Node>());
+                    }
+
+                    IEnumerator findPath;
+                
+                    // Fist Point
+                    if (i == 0)
+                    {
+                        findPath = FindPath(this.StartPoint, this.TargetPoints[i]);
+                    }
+                    // Last Point
+                    else if (i == this.TargetPoints.Count)
+                    {
+                        findPath = FindPath(this.TargetPoints[i-1], this.EndPoint);
+                    }
+                    // Middle Points
+                    else
+                    {
+                        findPath = FindPath(this.TargetPoints[i - 1], this.TargetPoints[i]);
+                    }
+
+                    yield return findPath;
+                    //yield return new WaitForSeconds(5);
+                
+                    string result = findPath.Current as string;
+
+                    if (result != "No Path Found") continue;
+                    notFinished = false;
+                    break;
+                }  
+                if (notFinished)
+                {
+                    break;
+                }
+            }
+            StopAllCoroutines();
+
+            yield return null;
+        }
 
         private IEnumerator FindPath(Vector2Int start, Vector2Int end)
         {
             List<Node> openSet = new List<Node>();
             HashSet<Node> closedSet = new HashSet<Node>();
-            
+
             Node startNode = this.QuadrantTiles[start.y][start.x].GetComponent<Node>();
             Node endNode = this.QuadrantTiles[end.y][end.x].GetComponent<Node>();
 
@@ -330,24 +414,24 @@ namespace Code.Scripts
 
             while (openSet.Count > 0)
             {
-                startNode.gameObject.GetComponent<MeshRenderer>().material.color = Color.gray;
-                endNode.gameObject.GetComponent<MeshRenderer>().material.color = Color.black;
-                
+                DrawGrayNode(startNode);
+                DrawBlackNode(endNode);
+
                 Node currentNode = openSet[0];
 
                 foreach (Node node in openSet.Where(node => node.GetFCost() < currentNode.GetFCost()))
                 {
                     currentNode = node;
                 }
-                currentNode.gameObject.GetComponent<MeshRenderer>().material.color = Color.yellow;
+
+                DrawYellowNode(currentNode);
 
                 openSet.Remove(currentNode);
 
-                if (IsEndNode(currentNode))
+                if (IsEndNode(currentNode, endNode))
                 {
-                    StopAllCoroutines();
-                    Debug.Log("Path found");
-                    this.RoadPath = ReconstructPath(currentNode);
+                    this.RoadPath.AddRange(ReconstructPath(currentNode));
+                    currentNode.SetTileType(ENodeState.Closed);
                     break;
                 }
 
@@ -355,36 +439,42 @@ namespace Code.Scripts
 
                 foreach (Node neighbour in neighbours)
                 {
-                    neighbour.gameObject.GetComponent<MeshRenderer>().material.color = Color.cyan;
+                    DrawCyanNode(neighbour);
                 }
-                
+
                 foreach (Node neighbour in neighbours)
                 {
-                    //float tentativeGCost = currentNode.GetGCost() + CalculateManhattanDistanceWithWeights(currentNode, neighbor);
                     float tentativeGCost = currentNode.GetGCost() + neighbour.GetCostToEnter();
 
                     if (openSet.Contains(neighbour) && !(tentativeGCost < neighbour.GetGCost())) continue;
-                    
+
                     neighbour.SetParent(currentNode);
                     neighbour.SetGCost(tentativeGCost);
                     neighbour.SetHCost(CalculateManhattanDistanceWithWeights(neighbour, endNode));
-                        
+
                     if (!openSet.Contains(neighbour)) openSet.Add(neighbour);
                 }
-                
-                yield return new WaitForSeconds(0.01f);
+
+                //yield return new WaitForSeconds(0.001f);
 
                 foreach (Node neighbour in neighbours)
                 {
-                    neighbour.gameObject.GetComponent<MeshRenderer>().material.color = Color.green;
+                    DrawGreenNode(neighbour);
                 }
 
-                currentNode.gameObject.GetComponent<MeshRenderer>().material.color = Color.red;
-                
+                DrawRedNode(currentNode);
+
                 currentNode.SetTileType(ENodeState.Closed);
                 closedSet.Add(currentNode);
             }
 
+            if (openSet.Count == 0)
+            {
+                yield return "No Path Found";
+            }else
+            {
+                yield return "Path Found";
+            }
         }
 
         List<Node> GetOpenNeighbours(Node node)
@@ -444,9 +534,9 @@ namespace Code.Scripts
             return indexes.Sum(index => this.QuadrantTiles[index[1]][index[0]].GetComponent<Node>().GetWeight());
         }
 
-        private bool IsEndNode(Node node)
+        private bool IsEndNode(Node node, Node endNode)
         {
-            return node.Position == this.EndPoint;
+            return node.Position == endNode.Position;
         }
 
         private List<Vector2Int> ReconstructPath(Node currentNode)
@@ -461,12 +551,48 @@ namespace Code.Scripts
 
             path.Reverse();
 
-            foreach (var VARIABLE in path)
+            foreach (Vector2Int VARIABLE in path)
             {
-                this.QuadrantTiles[VARIABLE.y][VARIABLE.x].GetComponent<MeshRenderer>().material.color = Color.black;
+                DrawBlackNode(this.QuadrantTiles[VARIABLE.y][VARIABLE.x].GetComponent<Node>());
             }
+
             return path;
 
+        }
+        
+        private void DrawGreenNode(Node node)
+        {
+            node.gameObject.GetComponent<MeshRenderer>().material.color = Color.green;
+        }
+        
+        private void DrawRedNode(Node node)
+        {
+            node.gameObject.GetComponent<MeshRenderer>().material.color = Color.red;
+        }
+        
+        private void DrawYellowNode(Node node)
+        {
+            node.gameObject.GetComponent<MeshRenderer>().material.color = Color.yellow;
+        }
+        
+        private void DrawCyanNode(Node node)
+        {
+            node.gameObject.GetComponent<MeshRenderer>().material.color = Color.cyan;
+        }
+        
+        private void DrawGrayNode(Node node)
+        {
+            node.gameObject.GetComponent<MeshRenderer>().material.color = Color.gray;
+        }
+        
+        private void ResetColorNode(Node node)
+        {
+            node.gameObject.GetComponent<MeshRenderer>().material.color = Color.white;
+        }
+        
+        private void DrawBlackNode(Node node)
+        {
+            node.gameObject.GetComponent<MeshRenderer>().material.color = Color.black;
         }
 
         #endregion
