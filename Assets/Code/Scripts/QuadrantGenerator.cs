@@ -37,23 +37,23 @@ namespace Code.Scripts
 
         private static List<Vector2Int> CreateCrossWeightMap(int distance)
         {
-            List<Vector2Int> WeightPoints = new List<Vector2Int>();
-            WeightPoints.Add(new Vector2Int(0, 0));
+            List<Vector2Int> weightPoints = new List<Vector2Int>();
+            weightPoints.Add(new Vector2Int(0, 0));
 
             for (int i = 1; i <= distance; i++)
             {
-                WeightPoints.Add(new Vector2Int(0, i));
-                WeightPoints.Add(new Vector2Int(0, i * -1));
-                WeightPoints.Add(new Vector2Int(i, 0));
-                WeightPoints.Add(new Vector2Int(i * -1, 0));
+                weightPoints.Add(new Vector2Int(0, i));
+                weightPoints.Add(new Vector2Int(0, i * -1));
+                weightPoints.Add(new Vector2Int(i, 0));
+                weightPoints.Add(new Vector2Int(i * -1, 0));
             }
 
-            return WeightPoints;
+            return weightPoints;
         }
 
         private static List<Vector2Int> CreateSquareWeightMap(int size)
         {
-            List<Vector2Int> WeightPoints = new List<Vector2Int>();
+            List<Vector2Int> weightPoints = new List<Vector2Int>();
             size = 3 + (size - 1) * 2;
 
             int offset = size / 2;
@@ -62,17 +62,17 @@ namespace Code.Scripts
             {
                 for (int j = 0; j < size; j++)
                 {
-                    WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
+                    weightPoints.Add(new Vector2Int((i - offset), (j - offset)));
                 }
             }
 
-            return WeightPoints;
+            return weightPoints;
         }
 
         private static List<Vector2Int> CreateFieldWeightMap(int size)
         {
-            List<Vector2Int> WeightPoints = new List<Vector2Int>();
-            WeightPoints.Add(new Vector2Int(0, 0));
+            List<Vector2Int> weightPoints = new List<Vector2Int>();
+            weightPoints.Add(new Vector2Int(0, 0));
             size = 3 + (size - 1) * 2; //   1 = 3,        3 = 7,      5 = 11,       7 = 15
 
             int offset = size / 2; //       3 = 1,        5 = 2,      7 = 3,        9 = 4
@@ -83,16 +83,16 @@ namespace Code.Scripts
                 {
                     if (i % 2 == 0)
                     {
-                        if (j % 2 == 0) WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
+                        if (j % 2 == 0) weightPoints.Add(new Vector2Int((i - offset), (j - offset)));
                         continue;
                     }
 
-                    if ((size / 2) == j) WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
-                    if (i == offset && j % 2 == 1) WeightPoints.Add(new Vector2Int((i - offset), (j - offset)));
+                    if ((size / 2) == j) weightPoints.Add(new Vector2Int((i - offset), (j - offset)));
+                    if (i == offset && j % 2 == 1) weightPoints.Add(new Vector2Int((i - offset), (j - offset)));
                 }
             }
 
-            return WeightPoints;
+            return weightPoints;
         }
     }
 
@@ -105,9 +105,8 @@ namespace Code.Scripts
 
         [SerializeField] private GameObject FieldTile;
 
-        List<List<GameObject>> QuadrantTiles = new List<List<GameObject>>();
-        List<Vector2Int> WeightPoints = new List<Vector2Int>();
-        List<Vector2Int> TargetPoints = new List<Vector2Int>();
+        private readonly List<List<GameObject>> QuadrantTiles = new List<List<GameObject>>();
+        private readonly List<Vector2Int> RoadPath = new List<Vector2Int>();
 
         #endregion
 
@@ -128,30 +127,29 @@ namespace Code.Scripts
         
         private void Start()
         {
+            StartGenerating(null);
+        }
+
+        public void StartGenerating(Quadrant PreviousStart)
+        {
             // Get A new Target Point
-            CreateEndPoint();
+            CreateEndPoint(PreviousStart);
 
             // Create a new Quadrant
             SpawnQuadrant(this.StartQuadrantPosition);
 
             SpawnTargetPoints();
 
-            SpawnWeightPoints();
-
             // Create A* Grid to navigate through the Quadrant
             CreateAStarGrid();
 
             // Generate Block Map to block some tiles to get more interesting paths
-            BakeWeightMap();
+            BakeWeightMap(SpawnWeightPoints());
 
-            //List<Vector2Int> road = FindPath(this.StartPoint, this.EndPoint);
-            //StartCoroutine(FindPath(this.StartPoint, this.EndPoint));
             StartCoroutine(CreatePath());
         }
 
-
-
-        private void CreateEndPoint()
+        private void CreateEndPoint(Quadrant quadrant)
         {
             this.StartDirection = (EDirection)Random.Range(0, 4);
             this.TargetDirection = (EDirection)Random.Range(0, 4);
@@ -189,9 +187,9 @@ namespace Code.Scripts
             }
         }
 
-        private void SpawnTargetPoints()
+        private List<Vector2Int> SpawnTargetPoints()
         {
-            this.TargetPoints?.Clear();
+            List<Vector2Int> TargetPoints = new List<Vector2Int>();
 
             int justified = 1 + (this.QuadrantSize / 5);
             int numTargets = (justified >= this.QuadrantSize / 2) ? justified : Random.Range(justified, this.QuadrantSize / 2);
@@ -200,60 +198,27 @@ namespace Code.Scripts
 
             // First Target
 
-            this.TargetPoints!.Add(new Vector2Int(Random.Range(1, this.QuadrantSize - 2), Random.Range(2, this.QuadrantSize - 2)));
+            TargetPoints!.Add(new Vector2Int(Random.Range(1, this.QuadrantSize - 2), Random.Range(2, this.QuadrantSize - 2)));
 
-            while (this.TargetPoints.Count < numTargets)
+            while (TargetPoints.Count < numTargets)
             {
                 Vector2Int target = new Vector2Int(Random.Range(2, this.QuadrantSize - 2), Random.Range(2, this.QuadrantSize - 2));
                 bool add = true;
 
-                foreach (Vector2Int point in this.TargetPoints.Where(point => Vector2Int.Distance(target, point) < 3 && !ignoreDistance))
+                foreach (Vector2Int point in TargetPoints.Where(point => Vector2Int.Distance(target, point) < 3 && !ignoreDistance))
                 {
                     add = false;
                 }
 
-                if (add) this.TargetPoints.Add(target);
+                if (add) TargetPoints.Add(target);
             }
 
-            foreach (Vector2Int point in this.TargetPoints)
+            foreach (Vector2Int point in TargetPoints)
             {
                 DrawCyanNode(this.QuadrantTiles[point.y][point.x].GetComponent<Node>());
             }
-        }
-
-        private void SpawnWeightPoints()
-        {
-            this.WeightPoints.Clear();
-
-            // Corners of the Quadrant
-            this.WeightPoints.Add(new Vector2Int(1, 1));
-            this.WeightPoints.Add(new Vector2Int(1, this.QuadrantSize - 2));
-            this.WeightPoints.Add(new Vector2Int(this.QuadrantSize - 2, 1));
-            this.WeightPoints.Add(new Vector2Int(this.QuadrantSize - 2, this.QuadrantSize - 2));
-
-            // Middle inside corners
-            this.WeightPoints.Add(new Vector2Int((int)this.QuadrantSize / 2, 1));
-            this.WeightPoints.Add(new Vector2Int((int)this.QuadrantSize / 2, this.QuadrantSize - 2));
-            this.WeightPoints.Add(new Vector2Int(1, (int)this.QuadrantSize / 2));
-            this.WeightPoints.Add(new Vector2Int(this.QuadrantSize - 2, (int)this.QuadrantSize / 2));
-
-            const int startInnerSquare = 3;
-            int endInnerSquare = this.QuadrantSize - 3;
-
-            if (endInnerSquare - startInnerSquare <= 3) return;
-
-            // Random Points
-            for (int i = 0; i < this.QuadrantSize - 6; i++)
-            {
-                this.WeightPoints.Add(new Vector2Int(Random.Range(startInnerSquare, endInnerSquare), Random.Range(startInnerSquare, endInnerSquare)));
-            }
-
-            return;
-
-            foreach (Vector2Int point in this.WeightPoints)
-            {
-                this.QuadrantTiles[point.y][point.x].GetComponent<MeshRenderer>().material.color = Color.magenta;
-            }
+            
+            return TargetPoints;
         }
 
         private void ResetQuadrant(Vector3 position)
@@ -284,9 +249,44 @@ namespace Code.Scripts
 
         #region A* Pathfinding Anstz
 
-        private void BakeWeightMap()
+        private List<Vector2Int> SpawnWeightPoints()
         {
-            foreach (Vector2Int point in this.WeightPoints)
+            List<Vector2Int> weightPoints = new List<Vector2Int>();
+
+            // Corners of the Quadrant
+            weightPoints.Add(new Vector2Int(1, 1));
+            weightPoints.Add(new Vector2Int(1, this.QuadrantSize - 2));
+            weightPoints.Add(new Vector2Int(this.QuadrantSize - 2, 1));
+            weightPoints.Add(new Vector2Int(this.QuadrantSize - 2, this.QuadrantSize - 2));
+
+            // Middle inside corners
+            weightPoints.Add(new Vector2Int((int)this.QuadrantSize / 2, 1));
+            weightPoints.Add(new Vector2Int((int)this.QuadrantSize / 2, this.QuadrantSize - 2));
+            weightPoints.Add(new Vector2Int(1, (int)this.QuadrantSize / 2));
+            weightPoints.Add(new Vector2Int(this.QuadrantSize - 2, (int)this.QuadrantSize / 2));
+
+            const int startInnerSquare = 3;
+            int endInnerSquare = this.QuadrantSize - 3;
+
+            if (endInnerSquare - startInnerSquare <= 3) return weightPoints;
+
+            // Random Points
+            for (int i = 0; i < this.QuadrantSize - 6; i++)
+            {
+                weightPoints.Add(new Vector2Int(Random.Range(startInnerSquare, endInnerSquare), Random.Range(startInnerSquare, endInnerSquare)));
+            }
+
+            return weightPoints;
+
+            foreach (Vector2Int point in weightPoints)
+            {
+                this.QuadrantTiles[point.y][point.x].GetComponent<MeshRenderer>().material.color = Color.magenta;
+            }
+        }
+        
+        private void BakeWeightMap(List<Vector2Int> WeightPoints)
+        {
+            foreach (Vector2Int point in WeightPoints)
             {
                 List<Vector2Int> weightPoints = WeightStruct.GetRandomFigure(Random.Range(3, this.QuadrantSize / 2));
 
@@ -313,9 +313,6 @@ namespace Code.Scripts
             }
         }
 
-        List<Vector2Int> RoadPath = new List<Vector2Int>();
-
-
         private void OnDrawGizmos()
         {
             if (this.RoadPath.Count == 0) return;
@@ -336,12 +333,12 @@ namespace Code.Scripts
             {
                 bool notFinished = true;
                 
-                SpawnTargetPoints();
+                List<Vector2Int> TargetPoints = SpawnTargetPoints();
                 this.RoadPath.Clear();
                 
                 
                 
-                for (int i = 0; i <= this.TargetPoints.Count; i++)
+                for (int i = 0; i <= TargetPoints.Count; i++)
                 {
                     // Reset the Quadrant
                     for (int j = 0; j < this.QuadrantSize; j++)
@@ -367,17 +364,17 @@ namespace Code.Scripts
                     // Fist Point
                     if (i == 0)
                     {
-                        findPath = FindPath(this.StartPoint, this.TargetPoints[i]);
+                        findPath = FindPath(this.StartPoint, TargetPoints[i]);
                     }
                     // Last Point
-                    else if (i == this.TargetPoints.Count)
+                    else if (i == TargetPoints.Count)
                     {
-                        findPath = FindPath(this.TargetPoints[i-1], this.EndPoint);
+                        findPath = FindPath(TargetPoints[i-1], this.EndPoint);
                     }
                     // Middle Points
                     else
                     {
-                        findPath = FindPath(this.TargetPoints[i - 1], this.TargetPoints[i]);
+                        findPath = FindPath(TargetPoints[i - 1], TargetPoints[i]);
                     }
 
                     yield return findPath;
@@ -481,34 +478,34 @@ namespace Code.Scripts
         {
             List<Node> neighbours = new List<Node>();
 
-            Func<Node, bool> IsNodeOpen = node => node.TileType == ENodeState.Open;
+            Func<Node, bool> isNodeOpen = node => node.TileType == ENodeState.Open;
 
             // North
             if (node.Position.y - 1 >= 0)
             {
                 Node n = this.QuadrantTiles[node.Position.y - 1][node.Position.x].GetComponent<Node>();
-                if (IsNodeOpen(n)) neighbours.Add(n);
+                if (isNodeOpen(n)) neighbours.Add(n);
             }
 
             // South
             if (node.Position.y + 1 < this.QuadrantSize)
             {
                 Node n = this.QuadrantTiles[node.Position.y + 1][node.Position.x].GetComponent<Node>();
-                if (IsNodeOpen(n)) neighbours.Add(n);
+                if (isNodeOpen(n)) neighbours.Add(n);
             }
 
             // West
             if (node.Position.x - 1 >= 0)
             {
                 Node n = this.QuadrantTiles[node.Position.y][node.Position.x - 1].GetComponent<Node>();
-                if (IsNodeOpen(n)) neighbours.Add(n);
+                if (isNodeOpen(n)) neighbours.Add(n);
             }
 
             // East
             if (node.Position.x + 1 < this.QuadrantSize)
             {
                 Node n = this.QuadrantTiles[node.Position.y][node.Position.x + 1].GetComponent<Node>();
-                if (IsNodeOpen(n)) neighbours.Add(n);
+                if (isNodeOpen(n)) neighbours.Add(n);
             }
 
             return neighbours;
@@ -551,9 +548,9 @@ namespace Code.Scripts
 
             path.Reverse();
 
-            foreach (Vector2Int VARIABLE in path)
+            foreach (Vector2Int variable in path)
             {
-                DrawBlackNode(this.QuadrantTiles[VARIABLE.y][VARIABLE.x].GetComponent<Node>());
+                DrawBlackNode(this.QuadrantTiles[variable.y][variable.x].GetComponent<Node>());
             }
 
             return path;

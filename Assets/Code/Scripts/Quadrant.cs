@@ -11,6 +11,16 @@ namespace Code.Scripts
         
         private int StartRoadTile;
         private List<int> EndRoadTiles = new List<int>();
+        
+        public EDirection GetStartDirection()
+        {
+            throw new System.NotImplementedException();
+        }
+        
+        public Vector2Int GetStartTile()
+        {
+            throw new System.NotImplementedException();
+        }
 
         private void ShowExpandDirection()
         {
