@@ -5,7 +5,7 @@ using NaughtyAttributes;
 using UnityEngine;
 
 
-[CreateAssetMenu(fileName = "GraphicSettings", menuName = "Settings/GraphicSettings", order = 1)]
+[CreateAssetMenu(fileName = "GraphicSettings", menuName = "ScriptableObject/Settings/GraphicSettings", order = 1)]
 public class GraphicSettings : ScriptableObject
 {
     [SerializeField] private int ResolutionWidth;

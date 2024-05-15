@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using NaughtyAttributes;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "SoundSettings", menuName = "Settings/SoundSettings", order = 1)]
+[CreateAssetMenu(fileName = "SoundSettings", menuName = "ScriptableObject/Settings/SoundSettings", order = 1)]
 public class SoundSettings : ScriptableObject
 {
     [SerializeField] private float MasterVolume;
