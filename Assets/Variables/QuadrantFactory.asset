@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 831c1a848a8247ba9bb2155a19e2c2d6, type: 3}
+  m_Name: QuadrantFactory
+  m_EditorClassIdentifier: 
+  LevelSettings: {fileID: 11400000, guid: 2eea280fe05ed6013b922e4fe40286d7, type: 2}
+  TilePrefab: {fileID: 8424386279585506443, guid: fc0dd5500a98633438c9a6f3f033ad61,
+    type: 3}
+  QuadrantPrefab: {fileID: 4610150775975518677, guid: 650092e1df9437c459e529bb6464b75a,
+    type: 3}

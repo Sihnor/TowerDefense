@@ -7,7 +7,7 @@ using Code.Scripts.ScriptableScripts;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-namespace Code.Scripts
+namespace Code.Scripts.Generation
 {
 
     #region Weight Struct
@@ -163,6 +163,29 @@ namespace Code.Scripts
             //StartGenerating(null);
         }
 
+        public EDirection TESTGenerateInitQuadrant()
+        {
+            for (int i = 0; i < this.LevelSettings.GetQuadrantSize(); i++)
+            {
+                for (int j = 0; j < this.LevelSettings.GetQuadrantSize(); j++)
+                {
+                    Instantiate(this.FieldTile, new Vector3(j, 0, i), Quaternion.Euler(0, 0, 0));
+                }
+            }
+            return Random.Range(0, 3) switch
+            {
+                0 => EDirection.North,
+                1 => EDirection.East,
+                2 => EDirection.West,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
+
+        public void TESTGenerateQuadrant()
+        {
+            
+        }
+
         public Quadrant GenerateStartQuadrant()
         {
             this.StartDirection = (EDirection)Random.Range(0, 4);
@@ -175,7 +198,8 @@ namespace Code.Scripts
                 EDirection.North => new Vector2Int(center, center - 2),
                 EDirection.South => new Vector2Int(center, center + 2),
                 EDirection.West => new Vector2Int(center - 2, center),
-                EDirection.East => new Vector2Int(center + 2, center)
+                EDirection.East => new Vector2Int(center + 2, center),
+                _ => throw new ArgumentOutOfRangeException()
             };
 
             this.EndPoint = this.TargetDirection switch
@@ -183,7 +207,8 @@ namespace Code.Scripts
                 EDirection.North => new Vector2Int(center, 0),
                 EDirection.South => new Vector2Int(center, this.LevelSettings.GetQuadrantSize() - 1),
                 EDirection.West => new Vector2Int(0, center),
-                EDirection.East => new Vector2Int(this.LevelSettings.GetQuadrantSize() - 1, center)
+                EDirection.East => new Vector2Int(this.LevelSettings.GetQuadrantSize() - 1, center),
+                _ => throw new ArgumentOutOfRangeException()
             };
             
             SpawnQuadrant(Vector3.zero);
@@ -197,7 +222,7 @@ namespace Code.Scripts
         public void StartGenerating(Quadrant PreviousStart)
         {
             // Get A new Target Point
-            CreateEndPoint(PreviousStart.GetTargetDirection(), PreviousStart.GetEndRoadTile());
+            //CreateEndPoint(PreviousStart.GetTargetDirection(), PreviousStart.GetEndRoadTile());
             //CreateRandomEndPoint();
             
             // Create a new Quadrant
