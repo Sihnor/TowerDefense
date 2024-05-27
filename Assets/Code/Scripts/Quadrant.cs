@@ -7,9 +7,9 @@ namespace Code.Scripts
     public class Quadrant : MonoBehaviour
     {
         private EDirection StartDirection;
-        private List<EDirection> TargetDirections = new List<EDirection>();
-        
         private int StartRoadTile;
+        
+        private List<EDirection> TargetDirections = new List<EDirection>();
         private List<int> EndRoadTiles = new List<int>();
         
         public EDirection GetStartDirection()
@@ -33,6 +33,16 @@ namespace Code.Scripts
         }
         
         public bool IsFinalized()
+        {
+            throw new System.NotImplementedException();
+        }
+        
+        public EDirection GetTargetDirection()
+        {
+            throw new System.NotImplementedException();
+        }
+        
+        public int GetEndRoadTile()
         {
             throw new System.NotImplementedException();
         }
