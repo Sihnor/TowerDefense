@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Code.Scripts.Enums;
 using Code.Scripts.Generation;
 using Code.Scripts.ScriptableScripts;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -16,6 +17,8 @@ namespace Code.Scripts.Factory
         
         [SerializeField] private GameObject TilePrefab;
         [SerializeField] private GameObject QuadrantPrefab;
+        
+        [SerializeField] private EDirection RESTRICTED_DIRECTION = EDirection.South;
         
         /// <summary>
         /// Generate a single exit quadrant
@@ -107,7 +110,7 @@ namespace Code.Scripts.Factory
         /// <param name="excludeDirection"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        private static EDirection RandomizeExitDirection(ICollection<EDirection> excludeDirection)
+        private EDirection RandomizeExitDirection(ICollection<EDirection> excludeDirection)
         {
             EDirection direction = Random.Range(0, 4) switch
             {
@@ -118,7 +121,7 @@ namespace Code.Scripts.Factory
                 _ => throw new ArgumentOutOfRangeException()
             };
 
-            while (excludeDirection.Contains(direction))
+            while (excludeDirection.Contains(direction) || direction == this.RESTRICTED_DIRECTION)
             {
                 direction = Random.Range(0, 4) switch
                 {
