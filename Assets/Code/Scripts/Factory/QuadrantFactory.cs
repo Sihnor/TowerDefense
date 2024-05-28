@@ -25,7 +25,7 @@ namespace Code.Scripts.Factory
         /// <param name="previousEndRoadTile">Start Tile of the new Quadrant</param>
         public GameObject GenerateSingleExitQuadrant(Vector2Int startPosition, EDirection startDirection, int previousEndRoadTile)
         {
-            EDirection targetDirection = RandomizeExitDirection(new List<EDirection> { startDirection });
+            EDirection targetDirection = RandomizeExitDirection(new List<EDirection> { InvertDirection(startDirection) });
             int endRoadTile = Random.Range(0, 15);
 
             List<GameObject> tiles = GenerateQuadrant(startPosition);
@@ -44,10 +44,10 @@ namespace Code.Scripts.Factory
         /// <param name="previousEndRoadTile">Start Tile of the new Quadrant</param>
         public GameObject GenerateDoubleExitQuadrant(Vector2Int startPosition, EDirection startDirection, int previousEndRoadTile)
         {
-            EDirection targetDirection = RandomizeExitDirection(new List<EDirection> {startDirection});
+            EDirection targetDirection = RandomizeExitDirection(new List<EDirection> {InvertDirection(startDirection)});
             int endRoadTile = Random.Range(0, 15);
 
-            EDirection targetDirection2 = RandomizeExitDirection(new List<EDirection> { startDirection, targetDirection });
+            EDirection targetDirection2 = RandomizeExitDirection(new List<EDirection> { InvertDirection(startDirection), targetDirection });
             int endRoadTile2 = Random.Range(0, 15);
             
             List<GameObject> tiles = GenerateQuadrant(startPosition);
@@ -66,13 +66,13 @@ namespace Code.Scripts.Factory
         /// <param name="previousEndRoadTile">Start Tile of the new Quadrant</param>
         public GameObject GenerateTripleExitQuadrant(Vector2Int startPosition, EDirection startDirection, int previousEndRoadTile)
         {
-            EDirection targetDirection = RandomizeExitDirection(new List<EDirection> { startDirection });
+            EDirection targetDirection = RandomizeExitDirection(new List<EDirection> { InvertDirection(startDirection) });
             int endRoadTile = Random.Range(0, 15);
 
-            EDirection targetDirection2 = RandomizeExitDirection(new List<EDirection> { startDirection, targetDirection });
+            EDirection targetDirection2 = RandomizeExitDirection(new List<EDirection> { InvertDirection(startDirection), targetDirection });
             int endRoadTile2 = Random.Range(0, 15);
 
-            EDirection targetDirection3 = RandomizeExitDirection(new List<EDirection> { startDirection, targetDirection, targetDirection2 });
+            EDirection targetDirection3 = RandomizeExitDirection(new List<EDirection> { InvertDirection(startDirection), targetDirection, targetDirection2 });
             int endRoadTile3 = Random.Range(0, 15);
             
             List<GameObject> tiles = GenerateQuadrant(startPosition);
@@ -83,6 +83,24 @@ namespace Code.Scripts.Factory
             return quadrant;
         }
 
+        /// <summary>
+        /// Invert the direction
+        /// </summary>
+        /// <param name="direction"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        private EDirection InvertDirection(EDirection direction)
+        {
+            return direction switch
+            {
+                EDirection.North => EDirection.South,
+                EDirection.East => EDirection.West,
+                EDirection.South => EDirection.North,
+                EDirection.West => EDirection.East,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
+        
         /// <summary>
         /// Randomize the exit direction
         /// </summary>
