@@ -12,27 +12,27 @@ namespace Code.Scripts.Generation
 
     #region Weight Struct
 
-    internal enum EWeightType
+    internal enum EWeightTypeOLD
     {
         Cross,
         Square,
         Field
     }
 
-    internal readonly struct WeightStruct
+    internal readonly struct WeightStructOLD
     {
         public static List<Vector2Int> GetRandomFigure(int size)
         {
             System.Random random = new System.Random();
 
             int randomFigure = random.Next(0, 3);
-            EWeightType type = (EWeightType)randomFigure;
+            EWeightTypeOLD type = (EWeightTypeOLD)randomFigure;
 
             return type switch
             {
-                EWeightType.Cross => CreateCrossWeightMap(size),
-                EWeightType.Square => CreateSquareWeightMap(size),
-                EWeightType.Field => CreateFieldWeightMap(size),
+                EWeightTypeOLD.Cross => CreateCrossWeightMap(size),
+                EWeightTypeOLD.Square => CreateSquareWeightMap(size),
+                EWeightTypeOLD.Field => CreateFieldWeightMap(size),
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
 
