@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Code.Scripts.Enums;
-using Code.Scripts.ScriptableScripts;
 using UnityEngine;
 
 namespace Code.Scripts.Generation
@@ -10,7 +9,7 @@ namespace Code.Scripts.Generation
     {
         [SerializeField] private GameObject ExpansionPrefab;
 
-        private Vector2Int StartPosition;
+        private Vector2Int WorldPosition;
         private EDirection StartDirection;
         private int StartRoadTile;
 
@@ -19,17 +18,15 @@ namespace Code.Scripts.Generation
         private readonly List<ExpansionScript> Expansions = new List<ExpansionScript>();
 
 
-        public GameObject InitQuadrant(Vector2Int startPosition, EDirection startDirection, int startRoadTile, List<EDirection> targetDirections, List<int> endRoadTiles, int QuadrantSize)
+        public void InitQuadrant(Vector2Int worldPosition, EDirection startDirection, int startRoadTile, List<EDirection> targetDirections, List<int> endRoadTiles, int quadrantSize)
         {
-            this.StartPosition = startPosition;
+            this.WorldPosition = worldPosition;
             this.StartDirection = startDirection;
             this.StartRoadTile = startRoadTile;
             this.TargetDirections = targetDirections;
             this.EndRoadTiles = endRoadTiles;
 
-            CreateExpansionObjects(QuadrantSize);
-
-            return this.gameObject;
+            CreateExpansionObjects(quadrantSize);
         }
 
         /// <summary>
@@ -38,15 +35,14 @@ namespace Code.Scripts.Generation
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         private void CreateExpansionObjects(int quadrantSize)
         {
-            foreach (EDirection direction in this.TargetDirections)
+            for (int i = 0; i < this.TargetDirections.Count; i++)
             {
-
                 #region Expansion Object Creation and Positioning
 
                 const int offset = 2;
 
-                Vector2Int objectPosition = this.StartPosition;
-                objectPosition += direction switch
+                Vector2Int objectPosition = this.WorldPosition;
+                objectPosition += this.TargetDirections[i] switch
                 {
                     EDirection.North => new Vector2Int(quadrantSize / 2, quadrantSize + offset),
                     EDirection.East => new Vector2Int(quadrantSize + offset, quadrantSize / 2),
@@ -61,8 +57,8 @@ namespace Code.Scripts.Generation
 
                 #region Next Quadrant Positioning
 
-                Vector2Int newQuadrantPosition = this.StartPosition;
-                newQuadrantPosition += direction switch
+                Vector2Int newQuadrantPosition = this.WorldPosition;
+                newQuadrantPosition += this.TargetDirections[i] switch
                 {
                     EDirection.North => new Vector2Int(0, quadrantSize),
                     EDirection.East => new Vector2Int(quadrantSize, 0),
@@ -72,11 +68,10 @@ namespace Code.Scripts.Generation
                 };
 
                 ExpansionScript expansionScript = expansion.GetComponent<ExpansionScript>();
-                expansionScript.InitExpansion(this, newQuadrantPosition, direction);
+                expansionScript.InitExpansion(this, newQuadrantPosition, this.TargetDirections[i], this.EndRoadTiles[i]);
                 this.Expansions.Add(expansionScript);
 
                 #endregion
-
             }
         }
 
@@ -100,7 +95,7 @@ namespace Code.Scripts.Generation
 
         public Vector2Int GetStartTile()
         {
-            return this.StartPosition;
+            return this.WorldPosition;
         }
 
         public EDirection GetStartDirection()

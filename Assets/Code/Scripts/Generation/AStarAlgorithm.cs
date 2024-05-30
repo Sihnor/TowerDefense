@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -122,21 +123,26 @@ namespace Code.Scripts.Generation
 
     public static class AStarAlgorithm
     {
-        private static List<Vector2Int> CreateTargetPoints(int QuadrantSize)
+        /// <summary>
+        /// Create the target points for the pathfinding algorithm
+        /// </summary>
+        /// <param name="quadrantSize"></param>
+        /// <returns></returns>
+        private static List<Vector2Int> CreateTargetPoints(int quadrantSize)
         {
             List<Vector2Int> TargetPoints = new List<Vector2Int>();
 
-            int justified = 1 + (QuadrantSize / 5);
-            int numTargets = (justified >= QuadrantSize / 2) ? justified : Random.Range(justified, QuadrantSize / 2);
+            int justified = 1 + (quadrantSize / 5);
+            int numTargets = (justified >= quadrantSize / 2) ? justified : Random.Range(justified, quadrantSize / 2);
             numTargets = 3;
             bool ignoreDistance = numTargets == justified;
 
             // First Target
-            TargetPoints!.Add(new Vector2Int(Random.Range(1, QuadrantSize - 2), Random.Range(2, QuadrantSize - 2)));
+            TargetPoints!.Add(new Vector2Int(Random.Range(1, quadrantSize - 2), Random.Range(2, quadrantSize - 2)));
 
             while (TargetPoints.Count < numTargets)
             {
-                Vector2Int target = new Vector2Int(Random.Range(2, QuadrantSize - 2), Random.Range(2, QuadrantSize - 2));
+                Vector2Int target = new Vector2Int(Random.Range(2, quadrantSize - 2), Random.Range(2, quadrantSize - 2));
                 bool add = true;
 
                 foreach (Vector2Int point in TargetPoints.Where(point => Vector2Int.Distance(target, point) < 3 && !ignoreDistance))
@@ -150,29 +156,34 @@ namespace Code.Scripts.Generation
             return TargetPoints;
         }
 
-        private static List<Vector2Int> CreateWeightPoints(int QuadrantSize)
+        /// <summary>
+        /// Create the weight points for the pathfinding algorithm
+        /// </summary>
+        /// <param name="quadrantSize"></param>
+        /// <returns></returns>
+        private static List<Vector2Int> CreateWeightPoints(int quadrantSize)
         {
             List<Vector2Int> weightPoints = new List<Vector2Int>();
 
             // Corners of the Quadrant
             weightPoints.Add(new Vector2Int(1, 1));
-            weightPoints.Add(new Vector2Int(1, QuadrantSize - 2));
-            weightPoints.Add(new Vector2Int(QuadrantSize - 2, 1));
-            weightPoints.Add(new Vector2Int(QuadrantSize - 2, QuadrantSize - 2));
+            weightPoints.Add(new Vector2Int(1, quadrantSize - 2));
+            weightPoints.Add(new Vector2Int(quadrantSize - 2, 1));
+            weightPoints.Add(new Vector2Int(quadrantSize - 2, quadrantSize - 2));
 
             // Middle inside corners
-            weightPoints.Add(new Vector2Int(QuadrantSize / 2, 1));
-            weightPoints.Add(new Vector2Int(QuadrantSize / 2, QuadrantSize - 2));
-            weightPoints.Add(new Vector2Int(1, QuadrantSize / 2));
-            weightPoints.Add(new Vector2Int(QuadrantSize - 2, QuadrantSize / 2));
+            weightPoints.Add(new Vector2Int(quadrantSize / 2, 1));
+            weightPoints.Add(new Vector2Int(quadrantSize / 2, quadrantSize - 2));
+            weightPoints.Add(new Vector2Int(1, quadrantSize / 2));
+            weightPoints.Add(new Vector2Int(quadrantSize - 2, quadrantSize / 2));
 
             const int startInnerSquare = 3;
-            int endInnerSquare = QuadrantSize - 3;
+            int endInnerSquare = quadrantSize - 3;
 
             if (endInnerSquare - startInnerSquare <= 3) return weightPoints;
 
             // Random Points
-            for (int i = 0; i < QuadrantSize - 6; i++)
+            for (int i = 0; i < quadrantSize - 6; i++)
             {
                 weightPoints.Add(new Vector2Int(Random.Range(startInnerSquare, endInnerSquare), Random.Range(startInnerSquare, endInnerSquare)));
             }
@@ -180,59 +191,117 @@ namespace Code.Scripts.Generation
             return weightPoints;
         }
 
-        private static void BakeWeightMap(List<List<GameObject>> QuadrantTiles, int QuadrantSize, List<Vector2Int> WeightPoints)
+        /// <summary>
+        /// Bake the weight map for the pathfinding algorithm with random figures
+        /// </summary>
+        /// <param name="quadrantTiles"></param>
+        /// <param name="quadrantSize"></param>
+        /// <param name="weightPointsCenter"></param>
+        private static void BakeWeightMap(IReadOnlyList<List<GameObject>> quadrantTiles, int quadrantSize, List<Vector2Int> weightPointsCenter)
         {
-            foreach (Vector2Int point in WeightPoints)
+            foreach (Vector2Int center in weightPointsCenter)
             {
-                List<Vector2Int> weightPoints = WeightStruct.GetRandomFigure(Random.Range(3, QuadrantSize / 2));
+                List<Vector2Int> weightStructures = WeightStruct.GetRandomFigure(Random.Range(3, quadrantSize / 2));
 
-                foreach (Vector2Int weightPoint in weightPoints)
+                foreach (Vector2Int weightPoint in weightStructures)
                 {
-                    int x = point.x + weightPoint.x;
-                    int y = point.y + weightPoint.y;
+                    int x = center.x + weightPoint.x;
+                    int y = center.y + weightPoint.y;
 
-                    if (x < 0 || x >= QuadrantSize || y < 0 || y >= QuadrantSize) continue;
+                    if (x < 0 || x >= quadrantSize || y < 0 || y >= quadrantSize) continue;
 
-                    QuadrantTiles[y][x].GetComponent<Node>().IncreaseWeight(Random.value * 3);
+                    quadrantTiles[y][x].GetComponent<Node>().IncreaseWeight(Random.value * 3);
                 }
             }
         }
 
+        /// <summary>
+        /// Create the first path for the pathfinding algorithm for Start-Quadrant
+        /// </summary>
+        /// <param name="quadrantTiles"></param>
+        /// <param name="quadrantSize"></param>
+        /// <param name="startPoint"></param>
+        /// <param name="endPoint"></param>
+        /// <returns></returns>
         public static List<Vector2Int> CreateFirstPath(List<List<GameObject>> quadrantTiles, int quadrantSize, Vector2Int startPoint, Vector2Int endPoint)
         {
-            List<Vector2Int> roadPath = new List<Vector2Int>();
-
-            roadPath = FindPath(quadrantTiles, quadrantSize, startPoint, endPoint);
+            List<Vector2Int> roadPath = FindPath(quadrantTiles, quadrantSize, startPoint, endPoint);
 
             return roadPath;
         }
 
-        //public static void CreatePath(List<List<GameObject>> quadrantTiles, int quadrantSize, Vector2Int startPoint, Vector2Int endPoint)
-        //{
-        //    List<Vector2Int> roadPath = new List<Vector2Int>();
-        //
-        //    IEnumerator findPath = FindPath(quadrantTiles, quadrantSize, startPoint, endPoint);
-        //
-        //    while (findPath.MoveNext())
-        //    {
-        //        if (findPath.Current.ToString() == "Path Found")
-        //        {
-        //            roadPath = (List<Vector2Int>)findPath.Current;
-        //            break;
-        //        }
-        //    }
-        //
-        //    OnDrawGizmos(roadPath);
-        //}
+        /// <summary>
+        /// Create the path for the pathfinding algorithm for every other Quadrant
+        /// </summary>
+        /// <param name="quadrantTiles"></param>
+        /// <param name="quadrantSize"></param>
+        /// <param name="startPoint"></param>
+        /// <param name="endPoint"></param>
+        public static List<Vector2Int> CreatePath(List<List<GameObject>> quadrantTiles, int quadrantSize, Vector2Int startPoint, Vector2Int endPoint)
+        {
+            List<Vector2Int> roadPath = new List<Vector2Int>();
+            
+            BakeWeightMap(quadrantTiles, quadrantSize, CreateWeightPoints(quadrantSize));
+            
+            bool recalculatePath;
+            do
+            {
+                recalculatePath = false;
+                roadPath.Clear();
+                ClearPathfindingData(quadrantTiles);
+                BlockRoadPath(quadrantTiles, roadPath);
 
-        private static List<Vector2Int> FindPath(List<List<GameObject>> quadrantTiles, int quadrantSize, Vector2Int start, Vector2Int end)
+                List<Vector2Int> targetPoints = CreateTargetPoints(quadrantSize);
+                
+                for (int i = 0; i < targetPoints.Count; i++)
+                {
+                    List<Vector2Int> newRoadPath;
+
+                    if (i == 0)
+                    {
+                        newRoadPath = FindPath(quadrantTiles, quadrantSize, startPoint, targetPoints[i]);
+                    }
+                    else if (i == targetPoints.Count - 1)
+                    {
+                        newRoadPath = FindPath(quadrantTiles, quadrantSize, targetPoints[i - 1], endPoint);
+                    }
+                    else
+                    {
+                        newRoadPath = FindPath(quadrantTiles, quadrantSize, targetPoints[i - 1], targetPoints[i]);
+                    }
+
+                    if (newRoadPath == null)
+                    {
+                        recalculatePath = true;
+                        break;
+                    }                   
+                    
+                    roadPath.AddRange(newRoadPath);
+                }
+                
+            } while (recalculatePath);
+            
+            return roadPath;
+        }
+
+        /// <summary>
+        /// Find the path between the start and end point inside the quadrant via the A* algorithm
+        /// </summary>
+        /// <param name="quadrantTiles"></param>
+        /// <param name="quadrantSize"></param>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <returns></returns>
+        private static List<Vector2Int> FindPath(IReadOnlyList<List<GameObject>> quadrantTiles, int quadrantSize, Vector2Int start, Vector2Int end)
         {
             List<Vector2Int> roadPath = new List<Vector2Int>();
             List<Node> openSet = new List<Node>();
             HashSet<Node> closedSet = new HashSet<Node>();
-
+            
             Node startNode = quadrantTiles[start.x][start.y].GetComponent<Node>();
             Node endNode = quadrantTiles[end.x][end.y].GetComponent<Node>();
+
+            Debug.Log("StartNode: " + startNode.Position + " EndNode: " + endNode.Position);
             
             startNode.SetWeight(1);
             startNode.SetParent(null);
@@ -243,6 +312,7 @@ namespace Code.Scripts.Generation
             {
                 Node currentNode = openSet[0];
 
+                // Find the node with the lowest F-Cost
                 foreach (Node node in openSet.Where(node => node.GetFCost() < currentNode.GetFCost()))
                 {
                     currentNode = node;
@@ -250,15 +320,17 @@ namespace Code.Scripts.Generation
 
                 openSet.Remove(currentNode);
 
+                // Check if the current node is the end node, target reached
                 if (IsEndNode(currentNode, endNode))
                 {
                     roadPath.AddRange(ReconstructPath(currentNode));
                     currentNode.SetTileType(ENodeState.Closed);
-                    break;
+                    return roadPath;
                 }
 
                 List<Node> neighbours = GetOpenNeighbours(quadrantTiles, quadrantSize, currentNode);
 
+                // Calculate the G-Cost, H-Cost and set the parent for the neighbours
                 foreach (Node neighbour in neighbours)
                 {
                     float tentativeGCost = currentNode.GetGCost() + neighbour.GetCostToEnter();
@@ -275,10 +347,18 @@ namespace Code.Scripts.Generation
                 currentNode.SetTileType(ENodeState.Closed);
                 closedSet.Add(currentNode);
             }
-            
-            return roadPath;
+
+            return null;
         }
 
+        /// <summary>
+        /// Get the open neighbours of the current node inside the quadrant (only horizontal and vertical)
+        /// </summary>
+        /// <param name="quadrantTiles"></param>
+        /// <param name="quadrantSize"></param>
+        /// <param name="node"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         private static List<Node> GetOpenNeighbours(IReadOnlyList<List<GameObject>> quadrantTiles, int quadrantSize, Node node)
         {
             if (quadrantSize <= 0) throw new ArgumentOutOfRangeException(nameof(quadrantSize));
@@ -317,6 +397,13 @@ namespace Code.Scripts.Generation
             bool IsNodeOpen(Node checkNode) => checkNode.TileType == ENodeState.Open;
         }
 
+        /// <summary>
+        /// Calculate the Manhattan distance between two nodes with weights inside the quadrant (only for the A* algorithm)
+        /// </summary>
+        /// <param name="quadrantTiles"></param>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
         private static float CalculateManhattanDistanceWithWeights(IReadOnlyList<List<GameObject>> quadrantTiles, Node a, Node b)
         {
             List<int[]> indexes = new List<int[]>();
@@ -337,11 +424,22 @@ namespace Code.Scripts.Generation
             return indexes.Sum(index => quadrantTiles[index[1]][index[0]].GetComponent<Node>().GetWeight());
         }
 
+        /// <summary>
+        /// Check if the current node is the end node via the position
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="endNode"></param>
+        /// <returns></returns>
         private static bool IsEndNode(Node node, Node endNode)
         {
             return node.Position == endNode.Position;
         }
 
+        /// <summary>
+        /// Reconstruct the path from the end node to the start node
+        /// </summary>
+        /// <param name="currentNode"></param>
+        /// <returns></returns>
         private static IEnumerable<Vector2Int> ReconstructPath(Node currentNode)
         {
             List<Vector2Int> path = new List<Vector2Int>();
@@ -355,6 +453,33 @@ namespace Code.Scripts.Generation
             path.Reverse();
 
             return path;
+        }
+
+        /// <summary>
+        /// Clear the pathfinding data from the nodes
+        /// </summary>
+        private static void ClearPathfindingData(IEnumerable<List<GameObject>> quadrantTiles)
+        {
+            foreach (List<GameObject> tiles in quadrantTiles)
+            {
+                foreach (GameObject tile in tiles)
+                {
+                    tile.GetComponent<Node>().SetTileType(ENodeState.Open);
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Block the tiles of the road path
+        /// </summary>
+        /// <param name="quadrantTiles"></param>
+        /// <param name="roadPath"></param>
+        private static void BlockRoadPath(IReadOnlyList<List<GameObject>> quadrantTiles, List<Vector2Int> roadPath)
+        {
+            foreach (Vector2Int path in roadPath)
+            {
+                quadrantTiles[path.x][path.y].GetComponent<Node>().SetTileType(ENodeState.Closed);
+            }
         }
     }
 }
