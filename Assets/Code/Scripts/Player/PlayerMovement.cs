@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace Code.Scripts.Player
 {
+    [RequireComponent(typeof(PlayerInput))]
     public class PlayerMovement : MonoBehaviour
     {
         private Vector2 Movement;
