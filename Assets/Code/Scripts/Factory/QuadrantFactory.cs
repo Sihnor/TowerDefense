@@ -9,7 +9,7 @@ using Random = UnityEngine.Random;
 
 namespace Code.Scripts.Factory
 {
-    [UnityEngine.CreateAssetMenu(fileName = "QuadrantFactory", menuName = "ScriptableObject/Factory/QuadrantFactory", order = 0)]
+    [CreateAssetMenu(fileName = "QuadrantFactory", menuName = "ScriptableObject/Factory/QuadrantFactory", order = 0)]
     public class QuadrantFactory : ScriptableObject
     {
         [SerializeField] private LevelSettings LevelSettings;
@@ -48,12 +48,21 @@ namespace Code.Scripts.Factory
                 _ => throw new ArgumentOutOfRangeException()
             };
 
+            // Create the tiles of the quadrant
             List<List<GameObject>> tiles = GenerateQuadrant(startPosition);
-            GameObject quadrant = InstantiateQuadrant(startPosition, EDirection.North, 0, new List<EDirection> { targetDirection }, new List<int> { endRoadTile });
+
+            // Create path
+            var roadTilesPosition = AStarAlgorithm.CreateFirstPath(tiles, this.LevelSettings.GetQuadrantSize(), startPoint, endPoint);
+
+            Vector2Int lastRoadTile = roadTilesPosition.Last();
+
+            // Instantiate the quadrant
+            GameObject quadrant = InstantiateQuadrant(
+                startPosition, EDirection.North, 0, new List<EDirection> { targetDirection },
+                new List<int> { endRoadTile }, tiles[lastRoadTile.x][lastRoadTile.y].GetComponent<Node>());
+
 
             CombineTileWithQuadrant(quadrant, tiles);
-
-            var roadTilesPosition = AStarAlgorithm.CreateFirstPath(tiles, this.LevelSettings.GetQuadrantSize(), startPoint, endPoint);
 
             foreach (var roadTile in roadTilesPosition)
             {
@@ -69,7 +78,8 @@ namespace Code.Scripts.Factory
         /// <param name="worldPosition">Start Position of the new Quadrant</param>
         /// <param name="previousEndDirection">Start Direction of the new Quadrant</param>
         /// <param name="previousEndRoadTile">Start Tile of the new Quadrant</param>
-        public GameObject GenerateSingleExitQuadrant(Vector2Int worldPosition, EDirection previousEndDirection, int previousEndRoadTile)
+        /// <param name="lastNode">Last Note of the previous Quadrant</param>
+        public GameObject GenerateSingleExitQuadrant(Vector2Int worldPosition, EDirection previousEndDirection, int previousEndRoadTile, Node lastNode)
         {
             EDirection startDirection = InvertDirection(previousEndDirection);
             int startRoadTile = previousEndRoadTile;
@@ -80,14 +90,22 @@ namespace Code.Scripts.Factory
             Vector2Int endPoint = CalculateQuadrantPoint(targetDirection, endRoadTile);
 
             List<List<GameObject>> tiles = GenerateQuadrant(worldPosition);
-            GameObject quadrant = InstantiateQuadrant(worldPosition, startDirection, startRoadTile, new List<EDirection> { targetDirection }, new List<int> { endRoadTile });
+
+            List<Vector2Int> roadPath = AStarAlgorithm.CreatePath(tiles, this.LevelSettings.GetQuadrantSize(), startPoint, endPoint);
+
+            // Set the parent of the fist node from the last Node of the previous Quadrant
+            tiles[roadPath.First().x][roadPath.First().y].GetComponent<Node>().SetParent(lastNode);
+
+            Vector2Int lastRoadTile = roadPath.Last();
+
+            GameObject quadrant = InstantiateQuadrant(
+                worldPosition, startDirection, startRoadTile, new List<EDirection> { targetDirection },
+                new List<int> { endRoadTile }, tiles[lastRoadTile.x][lastRoadTile.y].GetComponent<Node>());
 
             CombineTileWithQuadrant(quadrant, tiles);
 
-            var test = AStarAlgorithm.CreatePath(tiles, this.LevelSettings.GetQuadrantSize(), startPoint, endPoint);
-
             // make all road black
-            foreach (var roadTile in test)
+            foreach (var roadTile in roadPath)
             {
                 tiles[roadTile.x][roadTile.y].GetComponent<Renderer>().material.color = Color.black;
             }
@@ -110,7 +128,8 @@ namespace Code.Scripts.Factory
             int endRoadTile2 = Random.Range(1, this.LevelSettings.GetQuadrantSize());
 
             List<List<GameObject>> tiles = GenerateQuadrant(worldPosition);
-            GameObject quadrant = InstantiateQuadrant(worldPosition, startDirection, previousEndRoadTile, new List<EDirection> { targetDirection, targetDirection2 }, new List<int> { endRoadTile });
+            GameObject quadrant = InstantiateQuadrant(worldPosition, startDirection, previousEndRoadTile, new List<EDirection> { targetDirection, targetDirection2 }, new List<int> { endRoadTile, endRoadTile2 }, 
+                null);
 
             CombineTileWithQuadrant(quadrant, tiles);
 
@@ -136,7 +155,7 @@ namespace Code.Scripts.Factory
 
             List<List<GameObject>> tiles = GenerateQuadrant(worldPosition);
             GameObject quadrant = InstantiateQuadrant(worldPosition, startDirection, previousEndRoadTile, new List<EDirection> { targetDirection, targetDirection2, targetDirection3 },
-                new List<int> { endRoadTile });
+                new List<int> { endRoadTile, endRoadTile2, endRoadTile3 }, null);
 
             CombineTileWithQuadrant(quadrant, tiles);
 
@@ -226,11 +245,12 @@ namespace Code.Scripts.Factory
         /// <param name="previousEndRoadTile">Start Road of the new Quadrant</param>
         /// <param name="targetDirection">Target direction of the new Quadrant</param>
         /// <param name="endRoadTile">End Road of the new Quadrant</param>
+        /// <param name="lastNode"></param>
         /// <returns></returns>
-        private GameObject InstantiateQuadrant(Vector2Int worldPosition, EDirection startDirection, int previousEndRoadTile, List<EDirection> targetDirection, List<int> endRoadTile)
+        private GameObject InstantiateQuadrant(Vector2Int worldPosition, EDirection startDirection, int previousEndRoadTile, List<EDirection> targetDirection, List<int> endRoadTile, Node lastNode)
         {
             GameObject newQuadrant = Instantiate(this.QuadrantPrefab, new Vector3(worldPosition.x, 0, worldPosition.y), Quaternion.identity);
-            newQuadrant.GetComponent<Quadrant>().InitQuadrant(worldPosition, startDirection, previousEndRoadTile, targetDirection, endRoadTile, this.LevelSettings.GetQuadrantSize());
+            newQuadrant.GetComponent<Quadrant>().InitQuadrant(worldPosition, startDirection, previousEndRoadTile, targetDirection, endRoadTile, this.LevelSettings.GetQuadrantSize(), lastNode);
 
             return newQuadrant;
         }

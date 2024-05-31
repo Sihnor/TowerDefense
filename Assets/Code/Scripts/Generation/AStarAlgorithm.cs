@@ -301,10 +301,7 @@ namespace Code.Scripts.Generation
             Node startNode = quadrantTiles[start.x][start.y].GetComponent<Node>();
             Node endNode = quadrantTiles[end.x][end.y].GetComponent<Node>();
 
-            Debug.Log("StartNode: " + startNode.Position + " EndNode: " + endNode.Position);
-            
             startNode.SetWeight(1);
-            startNode.SetParent(null);
 
             openSet.Add(startNode);
 

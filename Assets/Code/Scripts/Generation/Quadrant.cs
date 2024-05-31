@@ -18,7 +18,7 @@ namespace Code.Scripts.Generation
         private readonly List<ExpansionScript> Expansions = new List<ExpansionScript>();
 
 
-        public void InitQuadrant(Vector2Int worldPosition, EDirection startDirection, int startRoadTile, List<EDirection> targetDirections, List<int> endRoadTiles, int quadrantSize)
+        public void InitQuadrant(Vector2Int worldPosition, EDirection startDirection, int startRoadTile, List<EDirection> targetDirections, List<int> endRoadTiles, int quadrantSize, Node lastNode)
         {
             this.WorldPosition = worldPosition;
             this.StartDirection = startDirection;
@@ -26,14 +26,14 @@ namespace Code.Scripts.Generation
             this.TargetDirections = targetDirections;
             this.EndRoadTiles = endRoadTiles;
 
-            CreateExpansionObjects(quadrantSize);
+            CreateExpansionObjects(quadrantSize, lastNode);
         }
 
         /// <summary>
         /// Create the events for the expansions of the quadrant for the WorldGenerator
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        private void CreateExpansionObjects(int quadrantSize)
+        private void CreateExpansionObjects(int quadrantSize, Node lastNode)
         {
             for (int i = 0; i < this.TargetDirections.Count; i++)
             {
@@ -68,7 +68,7 @@ namespace Code.Scripts.Generation
                 };
 
                 ExpansionScript expansionScript = expansion.GetComponent<ExpansionScript>();
-                expansionScript.InitExpansion(this, newQuadrantPosition, this.TargetDirections[i], this.EndRoadTiles[i]);
+                expansionScript.InitExpansion(this, newQuadrantPosition, this.TargetDirections[i], this.EndRoadTiles[i], lastNode);
                 this.Expansions.Add(expansionScript);
 
                 #endregion

@@ -1,7 +1,5 @@
-using System;
 using Code.Scripts.Enums;
 using Code.Scripts.Factory;
-using Code.Scripts.ScriptableScripts;
 using UnityEngine;
 
 namespace Code.Scripts.Generation
@@ -24,16 +22,18 @@ namespace Code.Scripts.Generation
 
             foreach (ExpansionScript expansionScript in temp.GetComponent<Quadrant>().GetExpansions())
             {
+                expansionScript.OnExpansion -= OnExpansion;
                 expansionScript.OnExpansion += OnExpansion;
             } 
         }
 
-        private void OnExpansion(Vector2Int position, EDirection direction, int roadTile)
+        private void OnExpansion(Vector2Int position, EDirection direction, int roadTile, Node lastNode)
         {
-            var temp = this.QuadrantFactory.GenerateSingleExitQuadrant(position, direction, roadTile);
+            var temp = this.QuadrantFactory.GenerateSingleExitQuadrant(position, direction, roadTile, lastNode);
             
             foreach (ExpansionScript expansionScript in temp.GetComponent<Quadrant>().GetExpansions())
             {
+                expansionScript.OnExpansion -= OnExpansion;
                 expansionScript.OnExpansion += OnExpansion;
             }
         }
