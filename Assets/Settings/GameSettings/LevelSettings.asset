@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df038358c9e6437a8aab2b0ef3950165, type: 3}
   m_Name: LevelSettings
   m_EditorClassIdentifier: 
-  QuadrantSize: 15
+  QuadrantSize: 17
   IntermediateTargets: 0
