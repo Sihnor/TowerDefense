@@ -8,7 +8,10 @@ namespace Code.Scripts.Player
     public class CameraMovement : MonoBehaviour
     {
         [SerializeField] private GameObject FollowTarget;
-        
+        [SerializeField] private int MaxZoom = 10;
+        private int CurrentZoom = 0;
+
+
         private void Awake()
         {
             PlayerInput input = GetComponent<PlayerInput>();
@@ -21,7 +24,12 @@ namespace Code.Scripts.Player
             float zoom = context.ReadValue<float>();
             zoom = Mathf.Clamp(zoom, -1, 1);
             
-            this.FollowTarget.transform.position += FollowTarget.transform.forward * zoom;
+            if (this.CurrentZoom + zoom < -this.MaxZoom || this.CurrentZoom + zoom > this.MaxZoom)
+                return;
+            
+            this.CurrentZoom += (int)zoom;
+            
+            this.FollowTarget.transform.position += this.FollowTarget.transform.forward * zoom;
         }
     }
 }
