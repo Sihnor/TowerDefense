@@ -11,22 +11,22 @@ namespace Code.Scripts.Generation
         private Vector2Int Position;
         private EDirection Direction;
         private int RoadTile;
-        private Node LastNode;
+        private BuildingNode LastBuildingNode;
 
-        public event Action<Vector2Int, EDirection, int, Node> OnExpansion;
+        public event Action<Vector2Int, EDirection, int, BuildingNode> OnExpansion;
 
-        public void InitExpansion(Quadrant quadrant, Vector2Int position, EDirection direction, int roadTile, Node lastNode)
+        public void InitExpansion(Quadrant quadrant, Vector2Int position, EDirection direction, int roadTile, BuildingNode lastBuildingNode)
         {
             this.Quadrant = quadrant;
             this.Position = position;
             this.Direction = direction;
             this.RoadTile = roadTile;
-            this.LastNode = lastNode;
+            this.LastBuildingNode = lastBuildingNode;
         }
 
         public void OnMouseUp()
         {
-            OnExpansion?.Invoke(this.Position, this.Direction, this.RoadTile, this.LastNode);
+            OnExpansion?.Invoke(this.Position, this.Direction, this.RoadTile, this.LastBuildingNode);
 
             // Remove the expansion and destroy the game object
             this.Quadrant.RemoveExpansion(this);

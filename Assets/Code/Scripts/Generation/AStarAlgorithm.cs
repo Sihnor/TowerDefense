@@ -211,7 +211,7 @@ namespace Code.Scripts.Generation
 
                     if (x < 0 || x >= quadrantSize || y < 0 || y >= quadrantSize) continue;
 
-                    quadrantTiles[y][x].GetComponent<Node>().IncreaseWeight(Random.value * 3);
+                    quadrantTiles[y][x].GetComponent<BuildingNode>().IncreaseWeight(Random.value * 3);
                 }
             }
         }
@@ -296,54 +296,54 @@ namespace Code.Scripts.Generation
         private static List<Vector2Int> FindPath(IReadOnlyList<List<GameObject>> quadrantTiles, int quadrantSize, Vector2Int start, Vector2Int end)
         {
             List<Vector2Int> roadPath = new List<Vector2Int>();
-            List<Node> openSet = new List<Node>();
-            HashSet<Node> closedSet = new HashSet<Node>();
+            List<BuildingNode> openSet = new List<BuildingNode>();
+            HashSet<BuildingNode> closedSet = new HashSet<BuildingNode>();
             
-            Node startNode = quadrantTiles[start.x][start.y].GetComponent<Node>();
-            Node endNode = quadrantTiles[end.x][end.y].GetComponent<Node>();
+            BuildingNode startBuildingNode = quadrantTiles[start.x][start.y].GetComponent<BuildingNode>();
+            BuildingNode endBuildingNode = quadrantTiles[end.x][end.y].GetComponent<BuildingNode>();
 
-            startNode.SetWeight(1);
+            startBuildingNode.SetWeight(1);
 
-            openSet.Add(startNode);
+            openSet.Add(startBuildingNode);
 
             while (openSet.Count > 0)
             {
-                Node currentNode = openSet[0];
+                BuildingNode currentBuildingNode = openSet[0];
 
                 // Find the node with the lowest F-Cost
-                foreach (Node node in openSet.Where(node => node.GetFCost() < currentNode.GetFCost()))
+                foreach (BuildingNode node in openSet.Where(node => node.GetFCost() < currentBuildingNode.GetFCost()))
                 {
-                    currentNode = node;
+                    currentBuildingNode = node;
                 }
 
-                openSet.Remove(currentNode);
+                openSet.Remove(currentBuildingNode);
 
                 // Check if the current node is the end node, target reached
-                if (IsEndNode(currentNode, endNode))
+                if (IsEndNode(currentBuildingNode, endBuildingNode))
                 {
-                    roadPath.AddRange(ReconstructPath(currentNode));
-                    currentNode.SetTileType(ENodeState.Closed);
+                    roadPath.AddRange(ReconstructPath(currentBuildingNode));
+                    currentBuildingNode.SetTileType(ENodeState.Closed);
                     return roadPath;
                 }
 
-                List<Node> neighbours = GetOpenNeighbours(quadrantTiles, quadrantSize, currentNode);
+                List<BuildingNode> neighbours = GetOpenNeighbours(quadrantTiles, quadrantSize, currentBuildingNode);
 
                 // Calculate the G-Cost, H-Cost and set the parent for the neighbours
-                foreach (Node neighbour in neighbours)
+                foreach (BuildingNode neighbour in neighbours)
                 {
-                    float tentativeGCost = currentNode.GetGCost() + neighbour.GetCostToEnter();
+                    float tentativeGCost = currentBuildingNode.GetGCost() + neighbour.GetCostToEnter();
 
                     if (openSet.Contains(neighbour) && !(tentativeGCost < neighbour.GetGCost())) continue;
 
-                    neighbour.SetParent(currentNode);
+                    neighbour.SetParent(currentBuildingNode);
                     neighbour.SetGCost(tentativeGCost);
-                    neighbour.SetHCost(CalculateManhattanDistanceWithWeights(quadrantTiles, neighbour, endNode));
+                    neighbour.SetHCost(CalculateManhattanDistanceWithWeights(quadrantTiles, neighbour, endBuildingNode));
 
                     if (!openSet.Contains(neighbour)) openSet.Add(neighbour);
                 }
 
-                currentNode.SetTileType(ENodeState.Closed);
-                closedSet.Add(currentNode);
+                currentBuildingNode.SetTileType(ENodeState.Closed);
+                closedSet.Add(currentBuildingNode);
             }
 
             return null;
@@ -354,45 +354,45 @@ namespace Code.Scripts.Generation
         /// </summary>
         /// <param name="quadrantTiles"></param>
         /// <param name="quadrantSize"></param>
-        /// <param name="node"></param>
+        /// <param name="buildingNode"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        private static List<Node> GetOpenNeighbours(IReadOnlyList<List<GameObject>> quadrantTiles, int quadrantSize, Node node)
+        private static List<BuildingNode> GetOpenNeighbours(IReadOnlyList<List<GameObject>> quadrantTiles, int quadrantSize, BuildingNode buildingNode)
         {
             if (quadrantSize <= 0) throw new ArgumentOutOfRangeException(nameof(quadrantSize));
-            List<Node> neighbours = new List<Node>();
+            List<BuildingNode> neighbours = new List<BuildingNode>();
 
             // North
-            if (node.Position.x - 1 >= 0)
+            if (buildingNode.Position.x - 1 >= 0)
             {
-                Node n = quadrantTiles[node.Position.x - 1][node.Position.y].GetComponent<Node>();
+                BuildingNode n = quadrantTiles[buildingNode.Position.x - 1][buildingNode.Position.y].GetComponent<BuildingNode>();
                 if (IsNodeOpen(n)) neighbours.Add(n);
             }
 
             // South
-            if (node.Position.x + 1 < quadrantSize)
+            if (buildingNode.Position.x + 1 < quadrantSize)
             {
-                Node n = quadrantTiles[node.Position.x + 1][node.Position.y].GetComponent<Node>();
+                BuildingNode n = quadrantTiles[buildingNode.Position.x + 1][buildingNode.Position.y].GetComponent<BuildingNode>();
                 if (IsNodeOpen(n)) neighbours.Add(n);
             }
 
             // West
-            if (node.Position.y - 1 >= 0)
+            if (buildingNode.Position.y - 1 >= 0)
             {
-                Node n = quadrantTiles[node.Position.x][node.Position.y - 1].GetComponent<Node>();
+                BuildingNode n = quadrantTiles[buildingNode.Position.x][buildingNode.Position.y - 1].GetComponent<BuildingNode>();
                 if (IsNodeOpen(n)) neighbours.Add(n);
             }
 
             // East
-            if (node.Position.y + 1 < quadrantSize)
+            if (buildingNode.Position.y + 1 < quadrantSize)
             {
-                Node n = quadrantTiles[node.Position.x][node.Position.y + 1].GetComponent<Node>();
+                BuildingNode n = quadrantTiles[buildingNode.Position.x][buildingNode.Position.y + 1].GetComponent<BuildingNode>();
                 if (IsNodeOpen(n)) neighbours.Add(n);
             }
 
             return neighbours;
 
-            bool IsNodeOpen(Node checkNode) => checkNode.TileType == ENodeState.Open;
+            bool IsNodeOpen(BuildingNode checkNode) => checkNode.TileType == ENodeState.Open;
         }
 
         /// <summary>
@@ -402,7 +402,7 @@ namespace Code.Scripts.Generation
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <returns></returns>
-        private static float CalculateManhattanDistanceWithWeights(IReadOnlyList<List<GameObject>> quadrantTiles, Node a, Node b)
+        private static float CalculateManhattanDistanceWithWeights(IReadOnlyList<List<GameObject>> quadrantTiles, BuildingNode a, BuildingNode b)
         {
             List<int[]> indexes = new List<int[]>();
 
@@ -419,33 +419,33 @@ namespace Code.Scripts.Generation
                 }
             }
 
-            return indexes.Sum(index => quadrantTiles[index[1]][index[0]].GetComponent<Node>().GetWeight());
+            return indexes.Sum(index => quadrantTiles[index[1]][index[0]].GetComponent<BuildingNode>().GetWeight());
         }
 
         /// <summary>
         /// Check if the current node is the end node via the position
         /// </summary>
-        /// <param name="node"></param>
-        /// <param name="endNode"></param>
+        /// <param name="buildingNode"></param>
+        /// <param name="endBuildingNode"></param>
         /// <returns></returns>
-        private static bool IsEndNode(Node node, Node endNode)
+        private static bool IsEndNode(BuildingNode buildingNode, BuildingNode endBuildingNode)
         {
-            return node.Position == endNode.Position;
+            return buildingNode.Position == endBuildingNode.Position;
         }
 
         /// <summary>
         /// Reconstruct the path from the end node to the start node
         /// </summary>
-        /// <param name="currentNode"></param>
+        /// <param name="currentBuildingNode"></param>
         /// <returns></returns>
-        private static IEnumerable<Vector2Int> ReconstructPath(Node currentNode)
+        private static IEnumerable<Vector2Int> ReconstructPath(BuildingNode currentBuildingNode)
         {
             List<Vector2Int> path = new List<Vector2Int>();
 
-            while (currentNode != null)
+            while (currentBuildingNode != null)
             {
-                path.Add(currentNode.Position);
-                currentNode = currentNode.GetParent();
+                path.Add(currentBuildingNode.Position);
+                currentBuildingNode = currentBuildingNode.GetParent();
             }
 
             path.Reverse();
@@ -462,7 +462,7 @@ namespace Code.Scripts.Generation
             {
                 foreach (GameObject tile in tiles)
                 {
-                    tile.GetComponent<Node>().SetTileType(ENodeState.Open);
+                    tile.GetComponent<BuildingNode>().SetTileType(ENodeState.Open);
                 }
             }
         }
@@ -476,7 +476,7 @@ namespace Code.Scripts.Generation
         {
             foreach (Vector2Int path in roadPath)
             {
-                quadrantTiles[path.x][path.y].GetComponent<Node>().SetTileType(ENodeState.Closed);
+                quadrantTiles[path.x][path.y].GetComponent<BuildingNode>().SetTileType(ENodeState.Closed);
             }
         }
     }

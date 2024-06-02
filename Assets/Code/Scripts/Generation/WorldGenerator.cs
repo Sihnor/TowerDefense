@@ -27,9 +27,9 @@ namespace Code.Scripts.Generation
             } 
         }
 
-        private void OnExpansion(Vector2Int position, EDirection direction, int roadTile, Node lastNode)
+        private void OnExpansion(Vector2Int position, EDirection direction, int roadTile, BuildingNode lastBuildingNode)
         {
-            var temp = this.QuadrantFactory.GenerateSingleExitQuadrant(position, direction, roadTile, lastNode);
+            var temp = this.QuadrantFactory.GenerateSingleExitQuadrant(position, direction, roadTile, lastBuildingNode);
             
             foreach (ExpansionScript expansionScript in temp.GetComponent<Quadrant>().GetExpansions())
             {

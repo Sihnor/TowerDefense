@@ -5,7 +5,7 @@ using UnityEngine.Rendering;
 
 namespace Code.Scripts
 {
-    public class Node : MonoBehaviour
+    public class BuildingNode : MonoBehaviour
     {
         public ENodeState TileType;
         public Vector2Int Position;
@@ -15,7 +15,7 @@ namespace Code.Scripts
         [SerializeField] private float hCost = 2; // Gibt an, wie weit der Zielknoten von diesem Knoten entfernt ist
         [SerializeField] private float fCost; // Gibt an, wie weit der Startknoten von diesem Knoten entfernt ist
         [SerializeField] private float Weight = 1;
-        [SerializeField] private Node Parent;
+        [SerializeField] private BuildingNode Parent;
 
 
         private void Update()
@@ -51,17 +51,17 @@ namespace Code.Scripts
             return this.CostToEnter;
         }
         
-        public Node GetParent()
+        public BuildingNode GetParent()
         {
             return this.Parent;
         }
         
-        public void SetParent(Node parent)
+        public void SetParent(BuildingNode parent)
         {
             this.Parent = parent;
         }
 
-        public Node(ENodeState tileType, Vector2Int position)
+        public BuildingNode(ENodeState tileType, Vector2Int position)
         {
             this.TileType = tileType;
             this.Position = position;
