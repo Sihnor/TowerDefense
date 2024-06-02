@@ -61,7 +61,7 @@ namespace Code.Scripts.Factory
                 startPosition, EDirection.North, 0, new List<EDirection> { targetDirection },
                 new List<int> { endRoadTile }, tiles[lastRoadTile.x][lastRoadTile.y].GetComponent<BuildingNode>());
             
-            CleanUpTiles(tiles);
+            CleanUpTiles(tiles, roadTilesPosition);
             
             CombineTileWithQuadrant(quadrant, tiles);
 
@@ -103,7 +103,7 @@ namespace Code.Scripts.Factory
                 worldPosition, startDirection, startRoadTile, new List<EDirection> { targetDirection },
                 new List<int> { endRoadTile }, tiles[lastRoadTile.x][lastRoadTile.y].GetComponent<BuildingNode>());
 
-            CleanUpTiles(tiles);
+            CleanUpTiles(tiles, roadPath);
             
             CombineTileWithQuadrant(quadrant, tiles);
 
@@ -284,7 +284,7 @@ namespace Code.Scripts.Factory
             };
         }
 
-        private void CleanUpTiles(List<List<GameObject>> tiles)
+        private void CleanUpTiles(List<List<GameObject>> tiles, ICollection<Vector2Int> roadPoints)
         {
             foreach (List<GameObject> tileList in tiles)
             {
@@ -297,6 +297,11 @@ namespace Code.Scripts.Factory
                     finish.SetParent(build.gameObject.GetComponent<Node>().GetParent());
                     finish.SetTileType(build.GetTileType());
                     Destroy(build);
+
+                    if (roadPoints.Contains(build.Position)) continue;
+                    
+                    finish.SetTileType(ENodeState.Open);
+                    finish.SetParent(null);
                 }
             }
         }
