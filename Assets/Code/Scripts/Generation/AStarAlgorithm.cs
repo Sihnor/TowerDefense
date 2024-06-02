@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
+using Code.Scripts.Enums;
 using Random = UnityEngine.Random;
 
 namespace Code.Scripts.Generation

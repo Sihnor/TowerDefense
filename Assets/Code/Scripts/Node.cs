@@ -5,13 +5,6 @@ using UnityEngine.Rendering;
 
 namespace Code.Scripts
 {
-    public enum ENodeState
-    {
-        Open, // Noch nicht besucht
-        Closed, // Besucht
-        Blocked, // Blockiert
-    }
-    
     public class Node : MonoBehaviour
     {
         public ENodeState TileType;
