@@ -438,13 +438,13 @@ namespace Code.Scripts.Generation
         /// </summary>
         /// <param name="currentBuildingNode"></param>
         /// <returns></returns>
-        private static IEnumerable<Vector2Int> ReconstructPath(BuildingNode currentBuildingNode)
+        private static IEnumerable<Vector2Int> ReconstructPath(INode currentBuildingNode)
         {
             List<Vector2Int> path = new List<Vector2Int>();
 
             while (currentBuildingNode != null)
             {
-                path.Add(currentBuildingNode.Position);
+                path.Add(((BuildingNode)currentBuildingNode).Position);
                 currentBuildingNode = currentBuildingNode.GetParent();
             }
 

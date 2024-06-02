@@ -1,32 +1,59 @@
-﻿using System;
-using Code.Scripts.Enums;
+﻿using Code.Scripts.Enums;
+using Code.Scripts.Generation;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Code.Scripts
 {
-    public class BuildingNode : MonoBehaviour
+    public class BuildingNode : MonoBehaviour, INode
     {
-        public ENodeState TileType;
-        public Vector2Int Position;
+        public ENodeState TileType { get; private set; }
+
+        public Vector2Int Position { get; private set; }
 
         [SerializeField] private float CostToEnter = 1;
         [SerializeField] private float gCost = 2; // Gibt an, wie weit der Startknoten von diesem Knoten entfernt ist
         [SerializeField] private float hCost = 2; // Gibt an, wie weit der Zielknoten von diesem Knoten entfernt ist
         [SerializeField] private float fCost; // Gibt an, wie weit der Startknoten von diesem Knoten entfernt ist
         [SerializeField] private float Weight = 1;
-        [SerializeField] private BuildingNode Parent;
+
+        public INode Parent { get; private set; }
 
 
-        private void Update()
-        {
-            this.fCost = GetFCost();
-        }
-
+        #region INode Implementation
+        
         public void SetNode(ENodeState tileType, Vector2Int position)
         {
             this.TileType = tileType;
             this.Position = position;
+        }
+        
+        public INode GetParent()
+        {
+            return this.Parent;
+        }
+
+        public ENodeState GetTileType()
+        {
+            return this.TileType;
+        }
+        
+        public void SetParent(INode parent)
+        {
+            this.Parent = parent;
+        }
+        
+        
+        public void SetNode(ENodeState tileType, INode parent)
+        {
+            this.TileType = tileType;
+            this.Parent = parent as BuildingNode;
+        }
+
+        #endregion
+
+        private void Update()
+        {
+            this.fCost = GetFCost();
         }
         
         public float GetWeight()
@@ -51,11 +78,6 @@ namespace Code.Scripts
             return this.CostToEnter;
         }
         
-        public BuildingNode GetParent()
-        {
-            return this.Parent;
-        }
-        
         public void SetParent(BuildingNode parent)
         {
             this.Parent = parent;
@@ -66,7 +88,7 @@ namespace Code.Scripts
             this.TileType = tileType;
             this.Position = position;
         }
-        
+
         public void SetTileType(ENodeState tileType)
         {
             this.TileType = tileType;

@@ -60,8 +60,9 @@ namespace Code.Scripts.Factory
             GameObject quadrant = InstantiateQuadrant(
                 startPosition, EDirection.North, 0, new List<EDirection> { targetDirection },
                 new List<int> { endRoadTile }, tiles[lastRoadTile.x][lastRoadTile.y].GetComponent<BuildingNode>());
-
-
+            
+            CleanUpTiles(tiles);
+            
             CombineTileWithQuadrant(quadrant, tiles);
 
             foreach (var roadTile in roadTilesPosition)
@@ -102,6 +103,8 @@ namespace Code.Scripts.Factory
                 worldPosition, startDirection, startRoadTile, new List<EDirection> { targetDirection },
                 new List<int> { endRoadTile }, tiles[lastRoadTile.x][lastRoadTile.y].GetComponent<BuildingNode>());
 
+            CleanUpTiles(tiles);
+            
             CombineTileWithQuadrant(quadrant, tiles);
 
             // make all road black
@@ -280,5 +283,21 @@ namespace Code.Scripts.Factory
             };
         }
 
+        private void CleanUpTiles(List<List<GameObject>> tiles)
+        {
+            foreach (List<GameObject> tileList in tiles)
+            {
+                foreach (GameObject tile in tileList)
+                {
+                    BuildingNode build = tile.GetComponent<BuildingNode>();
+                    Node finish = tile.GetComponent<Node>();
+                    
+                    finish.SetHeight(build.GetWeight());
+                    finish.SetParent(build.GetParent());
+                    finish.SetTileType(build.GetTileType());
+                    Destroy(build);
+                }
+            }
+        }
     }
 }
