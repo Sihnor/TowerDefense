@@ -233,6 +233,7 @@ namespace Code.Scripts.Factory
                     Vector2Int position = new Vector2Int(worldPosition.x + i, worldPosition.y + j);
                     GameObject tile = Instantiate(this.TilePrefab, new Vector3(position.x, 0, position.y), Quaternion.identity);
                     tile.GetComponent<BuildingNode>().SetNode(ENodeState.Open, new Vector2Int(i, j));
+                    tile.name = $"Tile {i} {j}";
                     tileList[i].Add(tile);
                 }
             }
@@ -292,8 +293,8 @@ namespace Code.Scripts.Factory
                     BuildingNode build = tile.GetComponent<BuildingNode>();
                     Node finish = tile.GetComponent<Node>();
                     
-                    finish.SetHeight(build.GetWeight());
-                    finish.SetParent(build.GetParent());
+                    finish.SetPosition(build.Position);
+                    finish.SetParent(build.gameObject.GetComponent<Node>().GetParent());
                     finish.SetTileType(build.GetTileType());
                     Destroy(build);
                 }

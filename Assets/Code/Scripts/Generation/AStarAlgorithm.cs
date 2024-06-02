@@ -336,6 +336,7 @@ namespace Code.Scripts.Generation
                     if (openSet.Contains(neighbour) && !(tentativeGCost < neighbour.GetGCost())) continue;
 
                     neighbour.SetParent(currentBuildingNode);
+                    neighbour.gameObject.GetComponent<Node>().SetParent(currentBuildingNode.gameObject.GetComponent<Node>());
                     neighbour.SetGCost(tentativeGCost);
                     neighbour.SetHCost(CalculateManhattanDistanceWithWeights(quadrantTiles, neighbour, endBuildingNode));
 
