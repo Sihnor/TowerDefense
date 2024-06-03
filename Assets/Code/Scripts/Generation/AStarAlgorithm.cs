@@ -134,12 +134,12 @@ namespace Code.Scripts.Generation
             List<Vector2Int> TargetPoints = new List<Vector2Int>();
 
             int justified = 1 + (quadrantSize / 5);
-            int numTargets = (justified >= quadrantSize / 2) ? justified : Random.Range(justified, quadrantSize / 2);
-            numTargets = 3;
+            int numTargets = (justified >= quadrantSize / 3) ? justified : Random.Range(justified, quadrantSize / 2);
+            //numTargets = 2;
             bool ignoreDistance = numTargets == justified;
 
             // First Target
-            TargetPoints!.Add(new Vector2Int(Random.Range(1, quadrantSize - 2), Random.Range(2, quadrantSize - 2)));
+            TargetPoints!.Add(new Vector2Int(Random.Range(1, quadrantSize - 1), Random.Range(2, quadrantSize - 1)));
 
             while (TargetPoints.Count < numTargets)
             {
