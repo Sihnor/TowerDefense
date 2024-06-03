@@ -1,13 +1,14 @@
 ﻿using Code.Scripts.Enums;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Code.Scripts.Generation
 {
-    public class Node : MonoBehaviour, INode, IWorldProperties
+    public class Node : MonoBehaviour, INode, IWorldProperties, IStackable
     {
         public float Height { get; private set; } = 0;
 
-        public Vector2Int Position { get; private set; } = Vector2Int.zero;
+        public Vector2Int Coordinates { get; private set; } = Vector2Int.zero;
 
         public ENodeState TileType { get; private set; } = ENodeState.Open;
 
@@ -40,7 +41,7 @@ namespace Code.Scripts.Generation
         {
             return this.TileType;
         }
-        
+
         #endregion
 
         #region IWorldProperties Implementation
@@ -49,33 +50,57 @@ namespace Code.Scripts.Generation
         {
             return this.Height;
         }
-        
+
         public void SetHeight(float factor)
         {
             this.Height = factor;
         }
-        
+
         public void AddHeight(float factor)
         {
             this.Height += factor;
         }
-        
+
         public void MultiplyHeight(float factor)
         {
             this.Height *= factor;
         }
-        
-        public Vector2Int GetPosition()
+
+
+        public Vector2Int GetCoordinates()
         {
-            return this.Position;
+            return this.Coordinates;
         }
-        
+
         public void SetPosition(Vector2Int position)
         {
-            this.Position = position;
+            this.Coordinates = position;
         }
-        
+
         #endregion
-        
+
+        #region IStackable Implementation
+
+        public IStackable MeinPlace { get; set; }
+
+        public Vector3 GetPosition()
+        {
+            if (this.MeinPlace == null)
+            {
+                return this.transform.position;
+            }
+            if (this.MeinPlace.MeinPlace == null)
+            {
+                return this.MeinPlace.GetPosition();
+            }
+            if (this.MeinPlace.MeinPlace.MeinPlace == null)
+            {
+                return this.MeinPlace.MeinPlace.GetPosition();
+            }
+            
+            return Vector3.zero;
+        }
+
+        #endregion
     }
 }

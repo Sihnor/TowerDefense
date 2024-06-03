@@ -6,7 +6,7 @@ namespace Code.Scripts.Generation
     {
         float Height { get; }
 
-        Vector2Int Position { get; }
+        Vector2Int Coordinates { get; }
 
         /// <summary>
         /// Set the height of the object inside the quadrant
@@ -42,6 +42,6 @@ namespace Code.Scripts.Generation
         /// Get the position of the object inside the quadrant
         /// </summary>
         /// <returns></returns>
-        public Vector2Int GetPosition();
+        public Vector2Int GetCoordinates();
     }
 }

@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 590707721603376264}
   - component: {fileID: 7724982242060485210}
   - component: {fileID: 4855332392583086665}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Plane
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -120,7 +120,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 307c019386a84bae9d722441819359d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CostToEnter: 0
+  CostToEnter: 1
   gCost: 2
   hCost: 2
   fCost: 0
