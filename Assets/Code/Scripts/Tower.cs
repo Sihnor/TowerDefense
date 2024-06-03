@@ -7,7 +7,7 @@ namespace Code.Scripts
     {
         public IStackable MeinPlace { get; set; }
 
-        public Vector3 GetPosition()
+        public Vector3 GetPositionForPlacement()
         {
             Vector3 offset = new Vector3(0, 1, 0);
 

@@ -82,23 +82,12 @@ namespace Code.Scripts.Generation
         #region IStackable Implementation
 
         public IStackable MeinPlace { get; set; }
-
-        public Vector3 GetPosition()
+        
+        public Vector3 GetPositionForPlacement()
         {
-            if (this.MeinPlace == null)
-            {
-                return this.transform.position;
-            }
-            if (this.MeinPlace.MeinPlace == null)
-            {
-                return this.MeinPlace.GetPosition();
-            }
-            if (this.MeinPlace.MeinPlace.MeinPlace == null)
-            {
-                return this.MeinPlace.MeinPlace.GetPosition();
-            }
+            IStackable currentPlace = this.MeinPlace;
             
-            return Vector3.zero;
+            return currentPlace?.GetPositionForPlacement() ?? this.transform.position;
         }
 
         #endregion

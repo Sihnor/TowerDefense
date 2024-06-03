@@ -19,21 +19,21 @@ namespace Code.Scripts.Player
         private void OnSelectTile(InputAction.CallbackContext context)
         {
             Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-            if (!Physics.Raycast(ray, out var hit, Mathf.Infinity, this.LayerMask)) return;
+            if (!Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, this.LayerMask)) return;
             
             Node tile = hit.collider.GetComponent<Node>();
             if (tile != null)
             {
                 if (tile.GetTileType() != ENodeState.Open) return;
-                if (!(tile as IStackable).CanBePlaced()) return;
+                if (((IStackable)tile).CanBePlaced() == false) return;
                 
-                IStackable lastPlace = (tile as IStackable).GetLastPlace();
+                IStackable lastPlace = ((IStackable)tile).GetLastPlace();
                 
-                Vector3 pos = (lastPlace).GetPosition();
+                Vector3 pos = (lastPlace).GetPositionForPlacement();
                 
                 GameObject tower = Instantiate(this.TowerPrefab, pos, Quaternion.identity);
 
-                var towerStack = tower.GetComponent<IStackable>();
+                IStackable towerStack = tower.GetComponent<IStackable>();
                 lastPlace.SetPlaceable(towerStack);
             }
         }
