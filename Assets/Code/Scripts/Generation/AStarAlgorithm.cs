@@ -217,6 +217,30 @@ namespace Code.Scripts.Generation
         }
 
         /// <summary>
+        /// Bake the weight map for the pathfinding algorithm with random figures
+        /// </summary>
+        /// <param name="quadrantTiles"></param>
+        /// <param name="quadrantSize"></param>
+        /// <param name="weightPointsCenter"></param>
+        private static void BakeWeightMap(IReadOnlyList<List<QuadrantStruct>> quadrantTiles, int quadrantSize, List<Vector2Int> weightPointsCenter)
+        {
+            foreach (Vector2Int center in weightPointsCenter)
+            {
+                List<Vector2Int> weightStructures = WeightStruct.GetRandomFigure(Random.Range(3, quadrantSize / 2));
+
+                foreach (Vector2Int weightPoint in weightStructures)
+                {
+                    int x = center.x + weightPoint.x;
+                    int y = center.y + weightPoint.y;
+
+                    if (x < 0 || x >= quadrantSize || y < 0 || y >= quadrantSize) continue;
+
+                    quadrantTiles[y][x].IncreaseWeight(Random.value * 3);
+                }
+            }
+        }
+
+        /// <summary>
         /// Create the first path for the pathfinding algorithm for Start-Quadrant
         /// </summary>
         /// <param name="quadrantTiles"></param>
@@ -241,31 +265,34 @@ namespace Code.Scripts.Generation
         public static List<Vector2Int> CreatePath(List<List<GameObject>> quadrantTiles, int quadrantSize, Vector2Int startPoint, Vector2Int endPoint)
         {
             List<Vector2Int> roadPath = new List<Vector2Int>();
-            
+
             BakeWeightMap(quadrantTiles, quadrantSize, CreateWeightPoints(quadrantSize));
-            
+
             int TotalLoops = 0;
-            
+
             bool recalculatePath;
+
             do
             {
                 if (TotalLoops >= 555)
                 {
                     Debug.LogError("TO MANY ITERATIONS!");
                 }
+
                 if (TotalLoops >= 1000)
                 {
-                    
-                    UnityEditor.EditorApplication.isPlaying = false; 
+
+                    UnityEditor.EditorApplication.isPlaying = false;
                     Debug.LogError("TO MANY ITERATIONS!");
                 }
+
                 recalculatePath = false;
                 roadPath.Clear();
                 ClearPathfindingData(quadrantTiles);
                 BlockRoadPath(quadrantTiles, roadPath);
 
                 List<Vector2Int> targetPoints = CreateTargetPoints(quadrantSize);
-                
+
                 for (int i = 0; i < targetPoints.Count; i++)
                 {
                     List<Vector2Int> newRoadPath;
@@ -287,13 +314,77 @@ namespace Code.Scripts.Generation
                     {
                         recalculatePath = true;
                         break;
-                    }                   
-                    
+                    }
+
                     roadPath.AddRange(newRoadPath);
                 }
+
                 TotalLoops++;
             } while (recalculatePath);
-            
+
+            return roadPath;
+        }
+
+        public static List<Vector2Int> CreatePath(List<List<QuadrantStruct>> quadrantTiles, int quadrantSize, Vector2Int startPoint, Vector2Int endPoint)
+        {
+            List<Vector2Int> roadPath = new List<Vector2Int>();
+
+            BakeWeightMap(quadrantTiles, quadrantSize, CreateWeightPoints(quadrantSize));
+
+            int TotalLoops = 0;
+
+            bool recalculatePath;
+
+            do
+            {
+                if (TotalLoops >= 555)
+                {
+                    Debug.LogError("TO MANY ITERATIONS!");
+                }
+
+                if (TotalLoops >= 1000)
+                {
+
+                    UnityEditor.EditorApplication.isPlaying = false;
+                    Debug.LogError("TO MANY ITERATIONS!");
+                }
+
+                recalculatePath = false;
+                roadPath.Clear();
+                ClearPathfindingData(quadrantTiles);
+                BlockRoadPath(quadrantTiles, roadPath);
+
+                List<Vector2Int> targetPoints = CreateTargetPoints(quadrantSize);
+
+                for (int i = 0; i < targetPoints.Count; i++)
+                {
+                    List<Vector2Int> newRoadPath;
+
+                    if (i == 0)
+                    {
+                        newRoadPath = FindPath(quadrantTiles, quadrantSize, startPoint, targetPoints[i]);
+                    }
+                    else if (i == targetPoints.Count - 1)
+                    {
+                        newRoadPath = FindPath(quadrantTiles, quadrantSize, targetPoints[i - 1], endPoint);
+                    }
+                    else
+                    {
+                        newRoadPath = FindPath(quadrantTiles, quadrantSize, targetPoints[i - 1], targetPoints[i]);
+                    }
+
+                    if (newRoadPath == null)
+                    {
+                        recalculatePath = true;
+                        break;
+                    }
+
+                    roadPath.AddRange(newRoadPath);
+                }
+
+                TotalLoops++;
+            } while (recalculatePath);
+
             return roadPath;
         }
 
@@ -310,7 +401,7 @@ namespace Code.Scripts.Generation
             List<Vector2Int> roadPath = new List<Vector2Int>();
             HashSet<BuildingNode> openSet = new HashSet<BuildingNode>();
             HashSet<BuildingNode> closedSet = new HashSet<BuildingNode>();
-            
+
             BuildingNode startBuildingNode = quadrantTiles[start.x][start.y].GetComponent<BuildingNode>();
             BuildingNode endBuildingNode = quadrantTiles[end.x][end.y].GetComponent<BuildingNode>();
 
@@ -349,6 +440,71 @@ namespace Code.Scripts.Generation
 
                     neighbour.SetParent(currentBuildingNode);
                     neighbour.gameObject.GetComponent<Node>().SetParent(currentBuildingNode.gameObject.GetComponent<Node>());
+                    neighbour.SetGCost(tentativeGCost);
+                    neighbour.SetHCost(CalculateManhattanDistanceWithWeights(quadrantTiles, neighbour, endBuildingNode));
+
+                    openSet.Add(neighbour);
+                }
+
+                currentBuildingNode.SetTileType(ENodeState.Closed);
+                closedSet.Add(currentBuildingNode);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Find the path between the start and end point inside the quadrant via the A* algorithm
+        /// </summary>
+        /// <param name="quadrantTiles"></param>
+        /// <param name="quadrantSize"></param>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <returns></returns>
+        private static List<Vector2Int> FindPath(IReadOnlyList<List<QuadrantStruct>> quadrantTiles, int quadrantSize, Vector2Int start, Vector2Int end)
+        {
+            List<Vector2Int> roadPath = new List<Vector2Int>();
+            HashSet<QuadrantStruct> openSet = new HashSet<QuadrantStruct>();
+            HashSet<QuadrantStruct> closedSet = new HashSet<QuadrantStruct>();
+
+            QuadrantStruct startBuildingNode = quadrantTiles[start.x][start.y];
+            QuadrantStruct endBuildingNode = quadrantTiles[end.x][end.y];
+
+            startBuildingNode.SetWeight(1);
+
+            openSet.Add(startBuildingNode);
+
+            while (openSet.Count > 0)
+            {
+                QuadrantStruct currentBuildingNode = openSet.First();
+
+                // Find the node with the lowest F-Cost
+                foreach (QuadrantStruct node in openSet.Where(node => node.GetFCost() < currentBuildingNode.GetFCost()))
+                {
+                    currentBuildingNode = node;
+                }
+
+                openSet.Remove(currentBuildingNode);
+
+                // Check if the current node is the end node, target reached
+                if (IsEndNode(currentBuildingNode, endBuildingNode))
+                {
+                    roadPath.AddRange(ReconstructPath(currentBuildingNode));
+                    currentBuildingNode.SetTileType(ENodeState.Closed);
+                    return roadPath;
+                }
+
+                List<QuadrantStruct> neighbours = GetOpenNeighbours(quadrantTiles, quadrantSize, currentBuildingNode);
+
+                // Calculate the G-Cost, H-Cost and set the parent for the neighbours
+                foreach (QuadrantStruct neighbour in neighbours)
+                {
+                    float tentativeGCost = currentBuildingNode.GetGCost() + neighbour.GetCostToEnter();
+
+                    if (openSet.Contains(neighbour) && !(tentativeGCost < neighbour.GetGCost())) continue;
+
+                    neighbour.SetParent(currentBuildingNode);
+                    neighbour.SetParent(currentBuildingNode);
                     neighbour.SetGCost(tentativeGCost);
                     neighbour.SetHCost(CalculateManhattanDistanceWithWeights(quadrantTiles, neighbour, endBuildingNode));
 
@@ -409,6 +565,52 @@ namespace Code.Scripts.Generation
         }
 
         /// <summary>
+        /// Get the open neighbours of the current node inside the quadrant (only horizontal and vertical)
+        /// </summary>
+        /// <param name="quadrantTiles"></param>
+        /// <param name="quadrantSize"></param>
+        /// <param name="buildingNode"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        private static List<QuadrantStruct> GetOpenNeighbours(IReadOnlyList<List<QuadrantStruct>> quadrantTiles, int quadrantSize, QuadrantStruct buildingNode)
+        {
+            if (quadrantSize <= 0) throw new ArgumentOutOfRangeException(nameof(quadrantSize));
+            List<QuadrantStruct> neighbours = new List<QuadrantStruct>();
+
+            // North
+            if (buildingNode.GetPosition().x - 1 >= 0)
+            {
+                QuadrantStruct n = quadrantTiles[buildingNode.GetPosition().x - 1][buildingNode.GetPosition().y];
+                if (IsNodeOpen(n)) neighbours.Add(n);
+            }
+
+            // South
+            if (buildingNode.GetPosition().x + 1 < quadrantSize)
+            {
+                QuadrantStruct n = quadrantTiles[buildingNode.GetPosition().x + 1][buildingNode.GetPosition().y];
+                if (IsNodeOpen(n)) neighbours.Add(n);
+            }
+
+            // West
+            if (buildingNode.GetPosition().y - 1 >= 0)
+            {
+                QuadrantStruct n = quadrantTiles[buildingNode.GetPosition().x][buildingNode.GetPosition().y - 1];
+                if (IsNodeOpen(n)) neighbours.Add(n);
+            }
+
+            // East
+            if (buildingNode.GetPosition().y + 1 < quadrantSize)
+            {
+                QuadrantStruct n = quadrantTiles[buildingNode.GetPosition().x][buildingNode.GetPosition().y + 1];
+                if (IsNodeOpen(n)) neighbours.Add(n);
+            }
+
+            return neighbours;
+
+            bool IsNodeOpen(QuadrantStruct checkNode) => checkNode.TileType == ENodeState.Open;
+        }
+
+        /// <summary>
         /// Calculate the Manhattan distance between two nodes with weights inside the quadrant (only for the A* algorithm)
         /// </summary>
         /// <param name="quadrantTiles"></param>
@@ -434,6 +636,33 @@ namespace Code.Scripts.Generation
 
             return TotalWeight;
         }
+        
+        /// <summary>
+                /// Calculate the Manhattan distance between two nodes with weights inside the quadrant (only for the A* algorithm)
+                /// </summary>
+                /// <param name="quadrantTiles"></param>
+                /// <param name="a"></param>
+                /// <param name="b"></param>
+                /// <returns></returns>
+                private static float CalculateManhattanDistanceWithWeights(IReadOnlyList<List<QuadrantStruct>> quadrantTiles, QuadrantStruct a, QuadrantStruct b)
+                {
+                    float TotalWeight = 0;
+        
+                    int minX = Mathf.Min(a.GetPosition().x, b.GetPosition().x);
+                    int maxX = Mathf.Max(a.GetPosition().x, b.GetPosition().x);
+                    int minY = Mathf.Min(a.GetPosition().y, b.GetPosition().y);
+                    int maxY = Mathf.Max(a.GetPosition().y, b.GetPosition().y);
+        
+                    for (int i = minX; i <= maxX; i++)
+                    {
+                        for (int j = minY; j <= maxY; j++)
+                        {
+                            TotalWeight += quadrantTiles[j][i].GetWeight();
+                        }
+                    }
+        
+                    return TotalWeight;
+                }
 
         /// <summary>
         /// Check if the current node is the end node via the position
@@ -444,6 +673,17 @@ namespace Code.Scripts.Generation
         private static bool IsEndNode(BuildingNode buildingNode, BuildingNode endBuildingNode)
         {
             return buildingNode.Position == endBuildingNode.Position;
+        }
+
+        /// <summary>
+        /// Check if the current node is the end node via the position
+        /// </summary>
+        /// <param name="buildingNode"></param>
+        /// <param name="endBuildingNode"></param>
+        /// <returns></returns>
+        private static bool IsEndNode(QuadrantStruct buildingNode, QuadrantStruct endBuildingNode)
+        {
+            return buildingNode.GetPosition() == endBuildingNode.GetPosition();
         }
 
         /// <summary>
@@ -479,7 +719,21 @@ namespace Code.Scripts.Generation
                 }
             }
         }
-        
+
+        /// <summary>
+        /// Clear the pathfinding data from the nodes
+        /// </summary>
+        private static void ClearPathfindingData(IEnumerable<List<QuadrantStruct>> quadrantTiles)
+        {
+            foreach (List<QuadrantStruct> tiles in quadrantTiles)
+            {
+                foreach (QuadrantStruct tile in tiles)
+                {
+                    tile.SetTileType(ENodeState.Open);
+                }
+            }
+        }
+
         /// <summary>
         /// Block the tiles of the road path
         /// </summary>
@@ -489,7 +743,20 @@ namespace Code.Scripts.Generation
         {
             foreach (Vector2Int path in roadPath)
             {
-                quadrantTiles[path.x][path.y].GetComponent<BuildingNode>().SetTileType(ENodeState.Closed);
+                quadrantTiles[path.x][path.y].GetComponent<Node>().SetTileType(ENodeState.Closed);
+            }
+        }
+
+        /// <summary>
+        /// Block the tiles of the road path
+        /// </summary>
+        /// <param name="quadrantTiles"></param>
+        /// <param name="roadPath"></param>
+        private static void BlockRoadPath(IReadOnlyList<List<QuadrantStruct>> quadrantTiles, List<Vector2Int> roadPath)
+        {
+            foreach (Vector2Int path in roadPath)
+            {
+                quadrantTiles[path.x][path.y].SetTileType(ENodeState.Closed);
             }
         }
     }

@@ -49,7 +49,7 @@ namespace Code.Scripts.Factory
             };
 
             // Create the tiles of the quadrant
-            List<List<GameObject>> tiles = GenerateQuadrant(startPosition);
+            List<List<GameObject>> tiles = GenerateQuadrant(startPosition, false);
 
             // Create path
             var roadTilesPosition = AStarAlgorithm.CreateFirstPath(tiles, this.LevelSettings.GetQuadrantSize(), startPoint, endPoint);
@@ -98,7 +98,8 @@ namespace Code.Scripts.Factory
                 Debug.LogError("DIRECTIONS ARE EQUAL!");
             }
 
-            List<List<GameObject>> tiles = GenerateQuadrant(worldPosition);
+            List<List<GameObject>> tiles = GenerateQuadrant(worldPosition, false);
+            List<List<QuadrantStruct>> quadrants = GenerateQuadrant(worldPosition);
 
             if (startPoint == endPoint)
             {
@@ -145,7 +146,7 @@ namespace Code.Scripts.Factory
             EDirection targetDirection2 = RandomizeExitDirection(new List<EDirection> { InvertDirection(startDirection), targetDirection });
             int endRoadTile2 = Random.Range(1, this.LevelSettings.GetQuadrantSize());
 
-            List<List<GameObject>> tiles = GenerateQuadrant(worldPosition);
+            List<List<GameObject>> tiles = GenerateQuadrant(worldPosition, false);
             GameObject quadrant = InstantiateQuadrant(worldPosition, startDirection, previousEndRoadTile, new List<EDirection> { targetDirection, targetDirection2 }, new List<int> { endRoadTile, endRoadTile2 }, 
                 null);
 
@@ -171,7 +172,7 @@ namespace Code.Scripts.Factory
             EDirection targetDirection3 = RandomizeExitDirection(new List<EDirection> { InvertDirection(startDirection), targetDirection, targetDirection2 });
             int endRoadTile3 = Random.Range(1, this.LevelSettings.GetQuadrantSize());
 
-            List<List<GameObject>> tiles = GenerateQuadrant(worldPosition);
+            List<List<GameObject>> tiles = GenerateQuadrant(worldPosition, false);
             GameObject quadrant = InstantiateQuadrant(worldPosition, startDirection, previousEndRoadTile, new List<EDirection> { targetDirection, targetDirection2, targetDirection3 },
                 new List<int> { endRoadTile, endRoadTile2, endRoadTile3 }, null);
 
@@ -234,7 +235,7 @@ namespace Code.Scripts.Factory
         /// Will create the tiles of the Quadrant
         /// </summary>
         /// <param name="worldPosition">Start Position of the Tiles</param>
-        private List<List<GameObject>> GenerateQuadrant(Vector2Int worldPosition)
+        private List<List<GameObject>> GenerateQuadrant(Vector2Int worldPosition, bool isRoad = false)
         {
             List<List<GameObject>> tileList = new List<List<GameObject>>();
             float quadrantSize = this.LevelSettings.GetQuadrantSize();
@@ -255,6 +256,30 @@ namespace Code.Scripts.Factory
 
             return tileList;
         }
+        
+        /// <summary>
+                /// Will create the tiles of the Quadrant
+                /// </summary>
+                /// <param name="worldPosition">Start Position of the Tiles</param>
+                private List<List<QuadrantStruct>> GenerateQuadrant(Vector2Int worldPosition)
+                {
+                    List<List<QuadrantStruct>> tileList = new List<List<QuadrantStruct>>();
+                    float quadrantSize = this.LevelSettings.GetQuadrantSize();
+        
+                    for (int i = 0; i < quadrantSize; i++)
+                    {
+                        tileList.Add(new List<QuadrantStruct>());
+        
+                        for (int j = 0; j < quadrantSize; j++)
+                        {
+                            QuadrantStruct quad = new QuadrantStruct();
+                            quad.SetPosition(new Vector2Int(i, j));
+                            tileList[i].Add(quad);
+                        }
+                    }
+        
+                    return tileList;
+                }
 
         /// <summary>
         /// Instantiate the Quadrant
