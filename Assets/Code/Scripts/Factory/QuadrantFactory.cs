@@ -87,10 +87,25 @@ namespace Code.Scripts.Factory
             Vector2Int startPoint = CalculateQuadrantPoint(startDirection, startRoadTile);
 
             EDirection targetDirection = RandomizeExitDirection(new List<EDirection> { startDirection });
-            int endRoadTile = Random.Range(1, this.LevelSettings.GetQuadrantSize());
+            int endRoadTile = Random.Range(1, this.LevelSettings.GetQuadrantSize() - 1);
             Vector2Int endPoint = CalculateQuadrantPoint(targetDirection, endRoadTile);
 
+            if (startDirection == targetDirection)
+            {
+                // stop playing
+                
+                UnityEditor.EditorApplication.isPlaying = false; 
+                Debug.LogError("DIRECTIONS ARE EQUAL!");
+            }
+
             List<List<GameObject>> tiles = GenerateQuadrant(worldPosition);
+
+            if (startPoint == endPoint)
+            {
+                Debug.LogError("Start and End Point are the same!");
+                UnityEditor.EditorApplication.isPlaying = false;
+                
+            }
 
             List<Vector2Int> roadPath = AStarAlgorithm.CreatePath(tiles, this.LevelSettings.GetQuadrantSize(), startPoint, endPoint);
 

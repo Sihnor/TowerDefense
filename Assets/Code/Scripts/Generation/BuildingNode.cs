@@ -51,11 +51,6 @@ namespace Code.Scripts
 
         #endregion
 
-        private void Update()
-        {
-            this.fCost = GetFCost();
-        }
-        
         public float GetWeight()
         {
             return this.Weight;
@@ -70,7 +65,7 @@ namespace Code.Scripts
         {
             this.Weight += weight;
 
-            this.CostToEnter = GetGCost() * this.Weight;
+            this.CostToEnter = this.gCost * this.Weight;
         }
         
         public float GetCostToEnter()
@@ -121,7 +116,7 @@ namespace Code.Scripts
         
         public float GetFCost()
         {
-            return GetGCost() + this.hCost;
+            return this.gCost + this.hCost;
         }
     }
 }

@@ -244,9 +244,21 @@ namespace Code.Scripts.Generation
             
             BakeWeightMap(quadrantTiles, quadrantSize, CreateWeightPoints(quadrantSize));
             
+            int TotalLoops = 0;
+            
             bool recalculatePath;
             do
             {
+                if (TotalLoops >= 555)
+                {
+                    Debug.LogError("TO MANY ITERATIONS!");
+                }
+                if (TotalLoops >= 1000)
+                {
+                    
+                    UnityEditor.EditorApplication.isPlaying = false; 
+                    Debug.LogError("TO MANY ITERATIONS!");
+                }
                 recalculatePath = false;
                 roadPath.Clear();
                 ClearPathfindingData(quadrantTiles);
@@ -279,7 +291,7 @@ namespace Code.Scripts.Generation
                     
                     roadPath.AddRange(newRoadPath);
                 }
-                
+                TotalLoops++;
             } while (recalculatePath);
             
             return roadPath;
@@ -296,7 +308,7 @@ namespace Code.Scripts.Generation
         private static List<Vector2Int> FindPath(IReadOnlyList<List<GameObject>> quadrantTiles, int quadrantSize, Vector2Int start, Vector2Int end)
         {
             List<Vector2Int> roadPath = new List<Vector2Int>();
-            List<BuildingNode> openSet = new List<BuildingNode>();
+            HashSet<BuildingNode> openSet = new HashSet<BuildingNode>();
             HashSet<BuildingNode> closedSet = new HashSet<BuildingNode>();
             
             BuildingNode startBuildingNode = quadrantTiles[start.x][start.y].GetComponent<BuildingNode>();
@@ -308,7 +320,7 @@ namespace Code.Scripts.Generation
 
             while (openSet.Count > 0)
             {
-                BuildingNode currentBuildingNode = openSet[0];
+                BuildingNode currentBuildingNode = openSet.First();
 
                 // Find the node with the lowest F-Cost
                 foreach (BuildingNode node in openSet.Where(node => node.GetFCost() < currentBuildingNode.GetFCost()))
@@ -340,7 +352,7 @@ namespace Code.Scripts.Generation
                     neighbour.SetGCost(tentativeGCost);
                     neighbour.SetHCost(CalculateManhattanDistanceWithWeights(quadrantTiles, neighbour, endBuildingNode));
 
-                    if (!openSet.Contains(neighbour)) openSet.Add(neighbour);
+                    openSet.Add(neighbour);
                 }
 
                 currentBuildingNode.SetTileType(ENodeState.Closed);
@@ -405,7 +417,7 @@ namespace Code.Scripts.Generation
         /// <returns></returns>
         private static float CalculateManhattanDistanceWithWeights(IReadOnlyList<List<GameObject>> quadrantTiles, BuildingNode a, BuildingNode b)
         {
-            List<int[]> indexes = new List<int[]>();
+            float TotalWeight = 0;
 
             int minX = Mathf.Min(a.Position.x, b.Position.x);
             int maxX = Mathf.Max(a.Position.x, b.Position.x);
@@ -416,11 +428,11 @@ namespace Code.Scripts.Generation
             {
                 for (int j = minY; j <= maxY; j++)
                 {
-                    indexes.Add(new int[] { i, j });
+                    TotalWeight += quadrantTiles[j][i].GetComponent<BuildingNode>().GetWeight();
                 }
             }
 
-            return indexes.Sum(index => quadrantTiles[index[1]][index[0]].GetComponent<BuildingNode>().GetWeight());
+            return TotalWeight;
         }
 
         /// <summary>
