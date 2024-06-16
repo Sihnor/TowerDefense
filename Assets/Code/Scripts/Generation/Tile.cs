@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Code.Scripts.Generation
 {
-    public class Node : MonoBehaviour, INode, IWorldProperties, IStackable
+    public class Tile : MonoBehaviour, INode, IWorldProperties, IStackable
     {
         public float Height { get; private set; } = 0;
 
@@ -15,7 +15,7 @@ namespace Code.Scripts.Generation
         public INode Parent { get; private set; } = null;
 
         #region INodes Implementation
-
+        
         public void SetNode(ENodeState tileType, INode parent)
         {
             this.TileType = tileType;

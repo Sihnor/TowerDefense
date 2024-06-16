@@ -21,7 +21,7 @@ namespace Code.Scripts.Player
             Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
             if (!Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, this.LayerMask)) return;
             
-            Node tile = hit.collider.GetComponent<Node>();
+            Tile tile = hit.collider.GetComponent<Tile>();
             if (tile != null)
             {
                 if (tile.GetTileType() != ENodeState.Open) return;
