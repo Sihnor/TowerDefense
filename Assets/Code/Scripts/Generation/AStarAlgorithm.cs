@@ -418,17 +418,55 @@ namespace Code.Scripts.Generation
         /// Calculate the Manhattan distance between two nodes with weights inside the quadrant (only for the A* algorithm)
         /// </summary>
         /// <param name="quadrantTiles"></param>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
+        /// <param name="startNode"></param>
+        /// <param name="endNode"></param>
         /// <returns></returns>
-        private static float CalculateManhattanDistanceWithWeights(IReadOnlyList<List<BuildingNode>> quadrantTiles, BuildingNode a, BuildingNode b)
+        private static float CalculateManhattanDistanceWithWeights(IReadOnlyList<List<BuildingNode>> quadrantTiles, BuildingNode startNode, BuildingNode endNode)
         {
             float totalWeight = 0;
 
-            int minX = Mathf.Min(a.Position.x, b.Position.x);
-            int maxX = Mathf.Max(a.Position.x, b.Position.x);
-            int minY = Mathf.Min(a.Position.y, b.Position.y);
-            int maxY = Mathf.Max(a.Position.y, b.Position.y);
+            BuildingNode currentNode = startNode;
+
+            // Bewegung in x-Richtung
+            while (currentNode.Position.x != endNode.Position.x)
+            {
+                totalWeight += currentNode.GetWeight();
+
+                if (currentNode.Position.x < endNode.Position.x)
+                {
+                    currentNode = quadrantTiles[currentNode.Position.x + 1][currentNode.Position.y];
+                }
+                else
+                {
+                    currentNode = quadrantTiles[currentNode.Position.x - 1][currentNode.Position.y];
+                }
+            }
+
+            // Bewegung in y-Richtung
+            while (currentNode.Position.y != endNode.Position.y)
+            {
+                totalWeight += currentNode.GetWeight();
+
+                if (currentNode.Position.y < endNode.Position.y)
+                {
+                    currentNode = quadrantTiles[currentNode.Position.x][currentNode.Position.y + 1];
+                }
+                else
+                {
+                    currentNode = quadrantTiles[currentNode.Position.x][currentNode.Position.y - 1];
+                }
+            }
+
+            // Gewicht des Endknotens hinzufügen
+            totalWeight += endNode.GetWeight();
+
+            return totalWeight;
+            //float totalWeight = 0;
+
+            int minX = Mathf.Min(startNode.Position.x, endNode.Position.x);
+            int maxX = Mathf.Max(startNode.Position.x, endNode.Position.x);
+            int minY = Mathf.Min(startNode.Position.y, endNode.Position.y);
+            int maxY = Mathf.Max(startNode.Position.y, endNode.Position.y);
 
             for (int i = minX; i <= maxX; i++)
             {
@@ -440,7 +478,7 @@ namespace Code.Scripts.Generation
 
             return totalWeight;
         }
-  
+
         /// <summary>
         /// Check if the current node is the end node via the position
         /// </summary>
