@@ -36,8 +36,8 @@ namespace Code.Scripts.State
         {
             this.PlayersState.SetGold(100);
             
-            this.GameWaveState = gameObject.AddComponent<GameWaveState>();
-            this.GameBuildState = gameObject.AddComponent<GameBuildState>();
+            this.GameWaveState = GetComponent<GameWaveState>();
+            this.GameBuildState = GetComponent<GameBuildState>();
             
             this.GameWaveState.GameStateStart(this.NumberOfWaves);
             

@@ -1,0 +1,31 @@
+#Border {
+    width: 225px;
+    height: 225px;
+}
+
+#Spacer {
+    min-width: 12.5%;
+}
+
+#Wizard {
+    min-width: 11%;
+    min-height: 75%;
+}
+
+.RoundButton {
+    border-top-left-radius: 1000px;
+    border-top-right-radius: 1000px;
+    border-bottom-right-radius: 1000px;
+    border-bottom-left-radius: 1000px;
+}
+
+.Rounded {
+    border-top-left-radius: 19px;
+    border-top-right-radius: 19px;
+    border-bottom-right-radius: 19px;
+    border-bottom-left-radius: 19px;
+    border-left-color: rgba(194, 162, 162, 0);
+    border-right-color: rgba(194, 162, 162, 0);
+    border-top-color: rgba(194, 162, 162, 0);
+    border-bottom-color: rgba(194, 162, 162, 0);
+}

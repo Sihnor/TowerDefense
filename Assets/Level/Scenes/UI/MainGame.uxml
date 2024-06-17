@@ -1,0 +1,37 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Level/Scenes/UI/MainGame.uss?fileID=7433441132597879392&amp;guid=f8b33e7e7f35b814780613e899051b4b&amp;type=3#MainGame" />
+    <ui:VisualElement style="flex-grow: 1;">
+        <ui:VisualElement name="VisualElement" style="flex-grow: 1;" />
+        <ui:VisualElement name="Shop" style="min-width: 75%; min-height: 20%; flex-direction: row; align-self: center; justify-content: center; align-items: center;">
+            <ui:VisualElement>
+                <ui:Button text="Reroll" parse-escape-sequences="true" display-tooltip-when-elided="true" name="RerollButton" class="RoundButton RerollButton" style="min-width: 79%; min-height: 11%; max-width: 50%; justify-content: flex-start; align-self: center; align-items: center; white-space: nowrap; text-overflow: clip; -unity-text-align: middle-center; font-size: 44px;" />
+            </ui:VisualElement>
+            <ui:VisualElement name="Wizard" style="flex-grow: 1;">
+                <ui:VisualElement name="BorderOne" style="flex-grow: 1;">
+                    <ui:VisualElement name="WizardOne" style="flex-grow: 1;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="Wizard" style="flex-grow: 1;">
+                <ui:VisualElement name="BorderTwo" style="flex-grow: 1;">
+                    <ui:VisualElement name="WizardTwo" style="flex-grow: 1;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="Wizard" style="flex-grow: 1;">
+                <ui:VisualElement name="BorderThree" style="flex-grow: 1;">
+                    <ui:VisualElement name="WizardThree" style="flex-grow: 1;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="Wizard" style="flex-grow: 1;">
+                <ui:VisualElement name="BorderFour" style="flex-grow: 1;">
+                    <ui:VisualElement name="WizardFour" style="flex-grow: 1;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="Wizard" style="flex-grow: 1;">
+                <ui:VisualElement name="BorderFive" style="flex-grow: 1;">
+                    <ui:VisualElement name="WizardFive" style="flex-grow: 1;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Button text="Next Wave" parse-escape-sequences="true" display-tooltip-when-elided="true" name="NextWaveButton" class="NextRound Rounded" style="justify-content: flex-start; align-items: flex-start; align-self: center; min-width: 10%; min-height: 5%; font-size: 28px;" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
