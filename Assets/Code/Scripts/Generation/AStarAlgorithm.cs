@@ -461,22 +461,6 @@ namespace Code.Scripts.Generation
             totalWeight += endNode.GetWeight();
 
             return totalWeight;
-            //float totalWeight = 0;
-
-            int minX = Mathf.Min(startNode.Position.x, endNode.Position.x);
-            int maxX = Mathf.Max(startNode.Position.x, endNode.Position.x);
-            int minY = Mathf.Min(startNode.Position.y, endNode.Position.y);
-            int maxY = Mathf.Max(startNode.Position.y, endNode.Position.y);
-
-            for (int i = minX; i <= maxX; i++)
-            {
-                for (int j = minY; j <= maxY; j++)
-                {
-                    totalWeight += quadrantTiles[j][i].GetWeight();
-                }
-            }
-
-            return totalWeight;
         }
 
         /// <summary>

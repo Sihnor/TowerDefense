@@ -1,5 +1,6 @@
 using Code.Scripts.Enums;
 using Code.Scripts.Factory;
+using Code.Scripts.State;
 using UnityEngine;
 
 namespace Code.Scripts.Generation
@@ -30,6 +31,8 @@ namespace Code.Scripts.Generation
         private void OnExpansion(Vector2Int position, EDirection direction, int roadTile, Tile lastBuildingTile)
         {
             var temp = this.QuadrantFactory.GenerateSingleExitQuadrant(position, direction, roadTile, lastBuildingTile);
+            
+            GameMode.Instance.StartWavePhase();
             
             foreach (ExpansionScript expansionScript in temp.GetComponent<Quadrant>().GetExpansions())
             {
