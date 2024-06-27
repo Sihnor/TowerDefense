@@ -9,7 +9,6 @@ using UnityEngine.UIElements;
 public class MainGameController : MonoBehaviour
 {
     private Button RerollButton;
-    private Button NextWaveButton;
     
     VisualElement[] Wizards = new VisualElement[5];
     private VisualElement WizardOne;
@@ -31,10 +30,8 @@ public class MainGameController : MonoBehaviour
         VisualElement root = GetComponent<UIDocument>().rootVisualElement;
         
         this.RerollButton = root.Q<Button>("RerollButton");
-        this.NextWaveButton = root.Q<Button>("NextWaveButton");
         
         this.RerollButton.RegisterCallback<ClickEvent>(Reroll);
-        this.NextWaveButton.RegisterCallback<ClickEvent>(NextWave);
         
         this.WizardOne = root.Q<VisualElement>("WizardOne");
         this.Wizards[0] = this.WizardOne;
@@ -61,14 +58,6 @@ public class MainGameController : MonoBehaviour
         Reroll(null);
     }
     
-
-    private void NextWave(ClickEvent evt)
-    {
-        
-        GameMode.Instance.StartWavePhase();
-        this.NextWaveButton.visible = false;
-    }
-
     private void Reroll(ClickEvent evt)
     {
         for (int i = 0; i < 5; i++)

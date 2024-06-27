@@ -31,7 +31,6 @@
                     <ui:VisualElement name="WizardFive" style="flex-grow: 1;" />
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:Button text="Next Wave" parse-escape-sequences="true" display-tooltip-when-elided="true" name="NextWaveButton" class="NextRound Rounded" style="justify-content: flex-start; align-items: flex-start; align-self: center; min-width: 10%; min-height: 5%; font-size: 28px;" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
