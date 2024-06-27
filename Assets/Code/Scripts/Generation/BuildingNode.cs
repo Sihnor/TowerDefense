@@ -118,5 +118,5 @@ namespace Code.Scripts
         {
             return this.gCost + this.hCost;
         }
-    }
+     }
 }

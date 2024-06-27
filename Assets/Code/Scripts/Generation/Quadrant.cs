@@ -17,6 +17,16 @@ namespace Code.Scripts.Generation
         private List<int> EndRoadTiles = new List<int>();
         private readonly List<ExpansionScript> Expansions = new List<ExpansionScript>();
 
+public void InitQuadrant(Vector2Int worldPosition, EDirection startDirection, int startRoadTile, List<EDirection> targetDirections, List<int> endRoadTiles, int quadrantSize, BuildingStruct lastBuildingNode)
+        {
+            this.WorldPosition = worldPosition;
+            this.StartDirection = startDirection;
+            this.StartRoadTile = startRoadTile;
+            this.TargetDirections = targetDirections;
+            this.EndRoadTiles = endRoadTiles;
+
+            CreateExpansionObjects(quadrantSize, lastBuildingNode);
+        }
 
         public void InitQuadrant(Vector2Int worldPosition, EDirection startDirection, int startRoadTile, List<EDirection> targetDirections, List<int> endRoadTiles, int quadrantSize, BuildingNode lastBuildingNode)
         {
@@ -29,6 +39,52 @@ namespace Code.Scripts.Generation
             CreateExpansionObjects(quadrantSize, lastBuildingNode);
         }
 
+         /// <summary>
+                /// Create the events for the expansions of the quadrant for the WorldGenerator
+                /// </summary>
+                /// <exception cref="ArgumentOutOfRangeException"></exception>
+                private void CreateExpansionObjects(int quadrantSize, BuildingStruct lastBuildingNode)
+                {
+                    for (int i = 0; i < this.TargetDirections.Count; i++)
+                    {
+                        #region Expansion Object Creation and Positioning
+        
+                        const int offset = 2;
+        
+                        Vector2Int objectPosition = this.WorldPosition;
+                        objectPosition += this.TargetDirections[i] switch
+                        {
+                            EDirection.North => new Vector2Int(quadrantSize / 2, quadrantSize + offset),
+                            EDirection.East => new Vector2Int(quadrantSize + offset, quadrantSize / 2),
+                            EDirection.South => new Vector2Int(quadrantSize / 2, -offset),
+                            EDirection.West => new Vector2Int(-offset, quadrantSize / 2),
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
+        
+                        GameObject expansion = Instantiate(this.ExpansionPrefab, new Vector3(objectPosition.x, 0, objectPosition.y), Quaternion.identity);
+        
+                        #endregion
+        
+                        #region Next Quadrant Positioning
+        
+                        Vector2Int newQuadrantPosition = this.WorldPosition;
+                        newQuadrantPosition += this.TargetDirections[i] switch
+                        {
+                            EDirection.North => new Vector2Int(0, quadrantSize),
+                            EDirection.East => new Vector2Int(quadrantSize, 0),
+                            EDirection.South => new Vector2Int(0, -quadrantSize),
+                            EDirection.West => new Vector2Int(-quadrantSize, 0),
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
+        
+                        ExpansionScript expansionScript = expansion.GetComponent<ExpansionScript>();
+                        expansionScript.InitExpansion(this, newQuadrantPosition, this.TargetDirections[i], this.EndRoadTiles[i], lastBuildingNode);
+                        this.Expansions.Add(expansionScript);
+        
+                        #endregion
+                    }
+                }
+        
         /// <summary>
         /// Create the events for the expansions of the quadrant for the WorldGenerator
         /// </summary>

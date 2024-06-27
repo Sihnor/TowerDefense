@@ -4,18 +4,20 @@ using UnityEngine.Rendering;
 
 namespace Code.Scripts.Generation
 {
-    public struct QuadrantStruct : INode
+    public struct BuildingStruct : INode
     {
+        private ENodeState NodeState;
+        
         private int X;
         private int Y;
-        private float Width;
-        private int Height;
-        private float Weight;
-        private ENodeState NodeState;
+        
+        private float CostToEnter;
         private float gCost;
         private float hCost;
         private float fCost;
-        private float CostToEnter;
+        private float Width;
+        private float Weight;
+
 
        
         public void SetPosition(Vector2Int position)
@@ -26,7 +28,7 @@ namespace Code.Scripts.Generation
    
         public void IncreaseWeight(float amount)
         {
-            this.Width += amount;
+            this.Weight += amount;
         }
 
         public ENodeState TileType { get; set; }

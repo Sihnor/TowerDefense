@@ -12,6 +12,7 @@ namespace Code.Scripts.Generation
         private EDirection Direction;
         private int RoadTile;
         private BuildingNode LastBuildingNode;
+        private BuildingStruct NewLastBuildingNode;
 
         public event Action<Vector2Int, EDirection, int, BuildingNode> OnExpansion;
 
@@ -22,6 +23,15 @@ namespace Code.Scripts.Generation
             this.Direction = direction;
             this.RoadTile = roadTile;
             this.LastBuildingNode = lastBuildingNode;
+        }
+        
+        public void InitExpansion(Quadrant quadrant, Vector2Int position, EDirection direction, int roadTile, BuildingStruct lastBuildingNode)
+        {
+            this.Quadrant = quadrant;
+            this.Position = position;
+            this.Direction = direction;
+            this.RoadTile = roadTile;
+            this.NewLastBuildingNode = lastBuildingNode;
         }
 
         public void OnMouseUp()
